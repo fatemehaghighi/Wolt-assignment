@@ -48,7 +48,7 @@
 ## Layer Structure
 - `models/staging`: source declarations + simple source-conformed models (renaming, type casting, JSON extraction; no business filtering/dedup).
 - `models/intermediate`: reusable transformations (SCD2, pricing, promo application, order enrichment).
-- `models/marts/core`: dimensions and facts with surrogate keys.
+- `models/marts/core`: dimensions and facts exposing both surrogate keys and business keys.
 - `models/marts/reporting`: task-oriented reporting marts.
 - `models/marts/metrics`: semantic/metrics definitions.
 
@@ -100,10 +100,11 @@
   - `item_key_sk`
   - `item_scd_sk`
   - `promo_key`
-- Business keys are used internally in staging/intermediate for source traceability and matching logic.
-- Core marts are SK-first:
-  - facts/dimensions expose surrogate keys for joins (`order_sk`, `order_item_sk`, `customer_sk`, `item_key_sk`, `item_scd_sk`, `promo_key`),
-  - business keys are intentionally excluded from marts outputs to keep downstream analytics on stable warehouse keys.
+- Business keys are retained in marts for analyst usability, debugging, exports, and source traceability.
+- Core marts are SK-first for joins, but also expose natural keys:
+  - order domain: `order_sk` + `purchase_key`
+  - customer domain: `customer_sk` + `customer_key`
+  - item domain: `item_key_sk`/`item_scd_sk` + `item_key`
 - Exception for lineage/debugging:
   - `dim_item_history` keeps `log_item_id` as technical source lineage reference (not as warehouse join key).
 - Rationale:
@@ -120,15 +121,29 @@
 - `fct_order`: order-level financial and behavioral metrics.
 - `fct_order_item`: item-level pricing and promo metrics.
 
+## Intermediate Layer Notes
+- `stg_wolt_order_items` is the single basket JSON expansion model in staging.
+- `int_wolt_order_items_priced` reuses `stg_wolt_order_items` and joins curated purchase/order attributes, instead of re-exploding basket JSON in intermediate.
+
 ## Reporting Models
 - `rpt_category_daily`
 - `rpt_item_pair_affinity`
 - `rpt_customer_promo_behavior`
-- Reporting models are published as daily run snapshots with audit columns:
+- Reporting models are published as run-level snapshots with audit columns:
   - `run_id`
   - `as_of_run_ts`
   - `as_of_run_date`
   - `publish_tag`
+- Reporting model merge keys include `run_id`, so each run is reproducible and does not overwrite same-day prior runs.
+- `rpt_customer_promo_behavior` is item-level for promo semantics:
+  - `first_order_had_any_promo_item`
+  - `first_order_had_only_promo_items`
+  - promo/non-promo item counts and values.
+- `rpt_item_pair_affinity` includes readable item names/categories and uses configurable threshold var:
+  - `pair_affinity_min_orders_together` (default `5`).
+- `rpt_category_daily` semantics:
+  - customer counts are category-attributed (one customer can appear in multiple categories on the same day),
+  - `avg_total_items_per_order_for_orders_with_category` is average full basket size for orders containing the category.
 - Run-level metadata is also written to `_run_metadata` for traceability and incident analysis.
   - current write pattern: one run-level row is written by the reporting publication entry model.
 - Rationale:

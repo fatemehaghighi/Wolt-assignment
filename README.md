@@ -1,49 +1,74 @@
 # Wolt Assignment Analytics Project
 
-This repository is structured to be shared safely for review without exposing any cloud credentials.
+Production-style analytics engineering project for Wolt assignment on BigQuery + dbt.
 
-## Stack
-- `dbt-core` + `dbt-bigquery`
-- BigQuery as the shared warehouse (`raw`, `analytics_dev`, `analytics_prod`)
-- GCS as landing zone for raw files
-- (Next step) Dagster orchestration
-- (Next step) Semantic layer definitions in dbt
-- (Next step) Metabase connected to BigQuery marts
+## End-to-End Flow
+
+`raw (GCS/BigQuery) -> staging -> intermediate -> marts (core/reporting)`
+
+- `staging`: source-conformed models only (typing, renaming, JSON parsing)
+- `intermediate`: curation, incremental watermarking, SCD2, pricing and promo logic
+- `marts/core`: dimensions + facts for BI consumption
+- `marts/reporting`: assignment-ready analytical outputs with run-level audit columns
+
+## Why Two Fact Tables
+
+- `fct_order`: order grain for order-level KPIs and customer order lifecycle metrics
+- `fct_order_item`: order-item grain for promo analysis, category/item analytics, and affinity
+
+Keeping these grains separate avoids metric duplication and simplifies joins.
+
+## Promo Logic (Task 2)
+
+Promo detection is item-level:
+
+- promo assignment is based on item + order date within promo validity window
+- `rpt_customer_promo_behavior` distinguishes promo vs non-promo items and values
+- first-order promo metrics include:
+  - `first_order_had_any_promo_item`
+  - `first_order_had_only_promo_items`
 
 ## Repository Layout
-- `data/raw/`: assignment CSV source files
-- `ingestion/`: scripts for GCS upload and BigQuery raw load
+
+- `data/raw/`: provided source CSVs
+- `ingestion/`: upload/load utilities
 - `wolt_assignment_dbt/`: dbt project
-- `wolt_assignment_dbt/models/staging/`: source declarations + source-conformed staging models
-- `wolt_assignment_dbt/models/intermediate/`: business transformation layer
-- `wolt_assignment_dbt/models/marts/`: core, reporting, and metrics marts
-- `.env.example`: required environment variables (safe template)
-- `credentials/.gitkeep`: placeholder for local secret files (git-ignored)
-- `scripts/validate_env.sh`: checks required env vars and key files
-- `Makefile`: standard local commands for reviewers
-- `SETUP_LOG.md`: chronological setup log
+- `outputs/`: exported assignment datasets
+- `presentation/`: assignment presentation artifacts
 
-## Credential Policy
-- Never commit service-account files.
-- Never commit `.env`.
-- Keep credential files only in `credentials/` (already ignored by git).
-- Use per-environment service accounts (separate dev and prod keys).
-- Grant minimum IAM permissions needed for assignment tasks.
+## Run Locally
 
-## Quick Start
 ```bash
 source .venv/bin/activate
 make setup-env
-# edit .env and place key files in credentials/
 make validate-env
 make ingest-raw
-make dbt-debug-dev
 make dbt-build-dev
-# weekly SCD2 safety backfill (deep lookback, no full-refresh)
-make dbt-backfill-item-scd2-dev BACKFILL_DAYS=35
-# corrective rebuild + tagged reporting publish snapshot
-make dbt-corrective-publish-dev BACKFILL_DAYS=35 PUBLISH_TAG=late_arrival_fix
 ```
 
-Detailed setup: [wolt_assignment_dbt/README_SETUP.md](wolt_assignment_dbt/README_SETUP.md)
-Modeling overview: [wolt_assignment_dbt/MODELING.md](wolt_assignment_dbt/MODELING.md)
+## Validate / Refresh
+
+```bash
+make dbt-debug-dev
+./scripts/dbt.sh build --target dev
+./scripts/dbt.sh build --target dev --full-refresh
+```
+
+## Export Final Datasets
+
+```bash
+make export-task1
+make export-task2
+```
+
+Expected artifacts:
+
+- `outputs/task1_order_item_enriched.csv`
+- `outputs/task2_category_growth_metrics.csv`
+- `presentation/wolt_assignment.pdf`
+
+## More Details
+
+- setup notes: [SETUP_LOG.md](SETUP_LOG.md)
+- modeling guide: [wolt_assignment_dbt/MODELING.md](wolt_assignment_dbt/MODELING.md)
+- dbt project guide: [wolt_assignment_dbt/README.md](wolt_assignment_dbt/README.md)

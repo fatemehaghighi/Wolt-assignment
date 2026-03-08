@@ -1,15 +1,16 @@
 with basket_items as (
     select
-        p.purchase_key,
+        oi.purchase_key,
         p.customer_key,
         p.time_order_received_utc,
         p.order_date_utc,
         p.order_date_berlin,
-        json_value(basket_item, '$.item_key') as item_key,
-        cast(json_value(basket_item, '$.item_count') as int64) as item_count
-    from {{ ref('int_wolt_purchase_logs_curated') }} as p,
-        unnest(json_query_array(p.item_basket_description_json, '$')) as basket_item
-    where json_value(basket_item, '$.item_key') is not null
+        oi.item_key,
+        oi.item_count
+    from {{ ref('stg_wolt_order_items') }} as oi
+    inner join {{ ref('int_wolt_purchase_logs_curated') }} as p
+        on oi.purchase_key = p.purchase_key
+    where oi.item_key is not null
         and p.time_order_received_utc is not null
 ),
 priced as (

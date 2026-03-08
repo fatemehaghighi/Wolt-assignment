@@ -2,7 +2,9 @@ version: 2
 
 models:
   - name: rpt_category_daily
-    description: Daily category report snapshot stored per run_id for run-level reproducibility.
+    description: >
+      Daily category report snapshot stored per run_id for run-level reproducibility.
+      Customer counts are category-attributed (a customer can appear in multiple categories in one day).
     columns:
       - name: run_id
         tests:
@@ -19,6 +21,12 @@ models:
       - name: item_category
         tests:
           - not_null
+      - name: category_attributed_first_time_customers
+        description: Distinct customers whose first-ever order included this category on this day.
+      - name: category_attributed_repeat_customers
+        description: Distinct returning customers who bought this category on this day.
+      - name: avg_total_items_per_order_for_orders_with_category
+        description: Average full basket item count for orders that included this category.
 
   - name: rpt_customer_promo_behavior
     description: Customer promo behavior at item level, stored per run_id for run-level reproducibility.
@@ -60,3 +68,7 @@ models:
       - name: item_key_sk_2
         tests:
           - not_null
+      - name: item_name_preferred_1
+        description: Display name for item_key_sk_1 for business readability.
+      - name: item_name_preferred_2
+        description: Display name for item_key_sk_2 for business readability.

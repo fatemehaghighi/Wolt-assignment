@@ -31,6 +31,7 @@ vars:
   watermark_table_name: "_elt_watermarks"
   run_metadata_table_name: "_run_metadata"
   publish_tag: "scheduled"
+  pair_affinity_min_orders_together: 5
   dim_date_start_date: "2019-01-01"
   dim_date_future_years: 3
 

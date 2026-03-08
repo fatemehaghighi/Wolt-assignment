@@ -35,6 +35,13 @@ total_orders as (
         count(distinct order_sk) as total_orders
     from {{ ref('fct_order') }}
     group by 1
+),
+item_dim as (
+    select
+        item_key_sk,
+        item_name_preferred,
+        item_category
+    from {{ ref('dim_item_current') }}
 )
 select
     {{ run_id_literal() }} as run_id,
@@ -44,6 +51,10 @@ select
     p.period_month,
     p.item_key_sk_1,
     p.item_key_sk_2,
+    coalesce(i1.item_name_preferred, 'Unknown') as item_name_preferred_1,
+    coalesce(i2.item_name_preferred, 'Unknown') as item_name_preferred_2,
+    coalesce(i1.item_category, 'Unknown') as item_category_1,
+    coalesce(i2.item_category, 'Unknown') as item_category_2,
     p.orders_together,
     safe_divide(p.orders_together, t.total_orders) as support,
     safe_divide(p.orders_together, io1.item_orders) as confidence_1_to_2,
@@ -61,4 +72,8 @@ inner join item_orders as io2
     and p.item_key_sk_2 = io2.item_key_sk
 inner join total_orders as t
     on p.period_month = t.period_month
-where p.orders_together >= 5
+left join item_dim as i1
+    on p.item_key_sk_1 = i1.item_key_sk
+left join item_dim as i2
+    on p.item_key_sk_2 = i2.item_key_sk
+where p.orders_together >= {{ var('pair_affinity_min_orders_together', 5) }}

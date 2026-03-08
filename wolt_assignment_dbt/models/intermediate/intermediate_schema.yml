@@ -67,6 +67,9 @@ models:
           - not_null
 
   - name: int_wolt_order_items_priced
+    description: >
+      Order-item pricing model that reuses `stg_wolt_order_items` basket expansion and joins
+      curated order attributes plus item SCD2 state at order timestamp.
     columns:
       - name: order_item_sk
         tests:
