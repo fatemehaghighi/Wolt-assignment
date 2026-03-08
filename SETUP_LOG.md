@@ -1,7 +1,7 @@
 # Setup Log
 
 Date: 2026-03-08
-Project: `/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment`
+Project: `<repo_root>`
 
 ## Goal
 Install `dbt-core` locally in this repository, then verify installation location and version.
@@ -15,7 +15,7 @@ pwd && ls -la
 ```
 
 Result:
-- Working directory: `/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment`
+- Working directory: `<repo_root>`
 - Directory was empty.
 
 2. Verified whether `dbt` was already installed.
@@ -49,14 +49,14 @@ python3.11 --version
 ```
 
 Result:
-- Python 3.11 available at `/Users/fhaghighi/.pyenv/shims/python3.11`.
+- Python 3.11 available at `<local_python_3_11_path>`.
 - Version: `Python 3.11.13`.
 
 5. Recreated venv with Python 3.11 and reinstalled packages.
 
 ```bash
 rm -rf .venv
-uv venv --python /Users/fhaghighi/.pyenv/shims/python3.11 .venv
+uv venv --python <local_python_3_11_path> .venv
 . .venv/bin/activate
 uv pip install dbt-core dbt-bigquery
 ```
@@ -76,7 +76,7 @@ Result:
 
 Result:
 - dbt executable:
-  - `/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/.venv/bin/dbt`
+  - `<repo_root>/.venv/bin/dbt`
 - dbt versions:
   - Core: `1.11.7`
   - Plugin `bigquery`: `1.11.1`
@@ -184,16 +184,16 @@ Change:
 15. Detected and mapped provided key files.
 
 Found in `credentials/`:
-- `wolt-assignment-489610-903badd90388.json` (`wolt-assignment-dev-service-ac@...`)
-- `wolt-assignment-489610-aa4357687d44.json` (`wolt-assignment-prod-service-a@...`)
+- `<dev_service_account_key.json>` (`<dev_service_account>@...`)
+- `<prod_service_account_key.json>` (`<prod_service_account>@...`)
 
 16. Updated local `.env` (not committed) with real project and key paths.
 
 Configured:
-- `DBT_BQ_DEV_PROJECT=wolt-assignment-489610`
-- `DBT_BQ_PROD_PROJECT=wolt-assignment-489610`
-- `DBT_BQ_DEV_KEYFILE=${PWD}/credentials/wolt-assignment-489610-903badd90388.json`
-- `DBT_BQ_PROD_KEYFILE=${PWD}/credentials/wolt-assignment-489610-aa4357687d44.json`
+- `DBT_BQ_DEV_PROJECT=<gcp_project_id>`
+- `DBT_BQ_PROD_PROJECT=<gcp_project_id>`
+- `DBT_BQ_DEV_KEYFILE=${PWD}/credentials/<dev_service_account_key.json>`
+- `DBT_BQ_PROD_KEYFILE=${PWD}/credentials/<prod_service_account_key.json>`
 
 17. Added missing Makefile target.
 
@@ -297,7 +297,7 @@ make ingest-raw
 Result:
 - Uploaded all 3 CSV files to:
   - `gs://wolt-assignment-raw/wolt_snack_store/raw/`
-- Loaded BigQuery raw tables in `wolt-assignment-489610:raw`:
+- Loaded BigQuery raw tables in `<gcp_project_id>:raw`:
   - `wolt_snack_store_item_logs`
   - `wolt_snack_store_promos`
   - `wolt_snack_store_purchase_logs`

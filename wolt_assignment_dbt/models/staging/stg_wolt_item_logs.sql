@@ -11,13 +11,20 @@ parsed as (
         payload as payload_raw
     from src
 ),
-deduped as (
-    select *
+typed as (
+    select
+        *,
+        cast(json_value(payload_json, '$.price_attributes[0].product_base_price') as numeric) as product_base_price_gross_eur,
+        cast(json_value(payload_json, '$.price_attributes[0].vat_rate_in_percent') as numeric) as vat_rate_pct,
+        -- Raw QA check showed this payload field is consistently stored without trailing timezone.
+        -- Example: log_item_id = 25a4f5a95905b9c620551dd25face96c -> 2019-09-05 08:33:06.213
+        -- Parse directly as UTC for efficiency and deterministic behavior.
+        safe.parse_timestamp(
+            '%Y-%m-%d %H:%M:%E*S',
+            json_value(payload_json, '$.time_item_created_in_source_utc'),
+            'UTC'
+        ) as time_item_created_in_source_utc
     from parsed
-    qualify row_number() over (
-        partition by log_item_id
-        order by time_log_created_utc desc, payload_raw desc
-    ) = 1
 )
 select
     log_item_id,
@@ -56,12 +63,9 @@ select
     ) as item_category,
     cast(json_value(payload_json, '$.number_of_units') as int64) as number_of_units,
     cast(json_value(payload_json, '$.weight_in_grams') as int64) as weight_in_grams,
-    cast(json_value(payload_json, '$.price_attributes[0].product_base_price') as numeric) as product_base_price_gross_eur,
-    cast(json_value(payload_json, '$.price_attributes[0].vat_rate_in_percent') as numeric) as vat_rate_pct,
-    safe.parse_timestamp(
-        '%Y-%m-%d %H:%M:%E*S Z',
-        json_value(payload_json, '$.time_item_created_in_source_utc')
-    ) as time_item_created_in_source_utc,
+    product_base_price_gross_eur,
+    vat_rate_pct,
+    time_item_created_in_source_utc,
     payload_json,
     payload_raw
-from deduped
+from typed

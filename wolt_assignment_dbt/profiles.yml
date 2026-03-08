@@ -1,14 +1,14 @@
 wolt_assignment_dbt:
-  target: dev
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
   outputs:
     dev:
       type: bigquery
       method: service-account
-      project: "wolt-assignment-489610"
-      dataset: "analytics_dev"
-      location: "EU"
-      keyfile: "/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/credentials/wolt-assignment-489610-903badd90388.json"
-      threads: 4
+      project: "{{ env_var('DBT_BQ_DEV_PROJECT') }}"
+      dataset: "{{ env_var('DBT_BQ_DEV_DATASET', 'analytics_dev') }}"
+      location: "{{ env_var('DBT_BQ_LOCATION', 'EU') }}"
+      keyfile: "{{ env_var('DBT_BQ_DEV_KEYFILE') }}"
+      threads: "{{ env_var('DBT_THREADS_DEV', 4) | int }}"
       job_execution_timeout_seconds: 300
       job_retries: 1
       priority: interactive
@@ -16,11 +16,11 @@ wolt_assignment_dbt:
     prod:
       type: bigquery
       method: service-account
-      project: "wolt-assignment-489610"
-      dataset: "analytics_prod"
-      location: "EU"
-      keyfile: "/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/credentials/wolt-assignment-489610-aa4357687d44.json"
-      threads: 8
+      project: "{{ env_var('DBT_BQ_PROD_PROJECT') }}"
+      dataset: "{{ env_var('DBT_BQ_PROD_DATASET', 'analytics_prod') }}"
+      location: "{{ env_var('DBT_BQ_LOCATION', 'EU') }}"
+      keyfile: "{{ env_var('DBT_BQ_PROD_KEYFILE') }}"
+      threads: "{{ env_var('DBT_THREADS_PROD', 8) | int }}"
       job_execution_timeout_seconds: 600
       job_retries: 2
       priority: interactive

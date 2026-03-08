@@ -1,19 +1,68 @@
 version: 2
 
 models:
-  - name: int_wolt_item_scd2
+  - name: int_wolt_item_logs_curated
+    description: >
+      Curated item-log model built from staging item logs. Applies event-time validity filtering,
+      optional dev sampling, incremental lookback processing, duplicate resolution by trust ranking,
+      and final positive-price quality gating.
     columns:
-      - name: item_scd_key
+      - name: log_item_id
+        description: Unique curated log identifier after deduplication.
+        tests:
+          - not_null
+          - unique
+      - name: item_key
+        description: Business key for the item referenced by the log event.
+        tests:
+          - not_null
+      - name: time_log_created_utc
+        description: Event timestamp used for incremental watermarking and ordering.
+        tests:
+          - not_null
+      - name: product_base_price_gross_eur
+        description: Trusted positive base price after curated quality filters.
+        tests:
+          - not_null
+
+  - name: int_wolt_purchase_logs_curated
+    description: >
+      Curated purchase-log model with event-time validity filtering and watermark-driven
+      incremental processing. Uses metadata-table watermarks to avoid scanning large target
+      tables for max timestamp on each incremental run.
+    columns:
+      - name: purchase_key
+        tests:
+          - not_null
+          - unique
+      - name: customer_key
+        tests:
+          - not_null
+      - name: time_order_received_utc
+        tests:
+          - not_null
+
+  - name: int_wolt_item_scd2
+    description: >
+      Item SCD2 model generated from curated item logs. Creates validity windows
+      (`valid_from_utc`, `valid_to_utc`) per item timeline using event-time ordering,
+      with deterministic same-timestamp tie-breaking by log_item_id.
+    columns:
+      - name: item_scd_sk
+        description: Deterministic surrogate key for each SCD2 version row.
         tests:
           - not_null
           - unique
       - name: item_key_sk
+        description: Stable surrogate key for the item entity.
         tests:
           - not_null
       - name: valid_from_utc
+        description: Inclusive start timestamp of this SCD2 version.
         tests:
           - not_null
       - name: valid_to_utc
+        description: Exclusive end timestamp of this SCD2 version.
         tests:
           - not_null
 
@@ -29,7 +78,7 @@ models:
       - name: customer_sk
         tests:
           - not_null
-      - name: item_scd_key
+      - name: item_scd_sk
         tests:
           - not_null
 

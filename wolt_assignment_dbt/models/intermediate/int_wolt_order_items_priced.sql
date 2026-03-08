@@ -1,6 +1,16 @@
 with basket_items as (
-    select *
-    from {{ ref('stg_wolt_order_items') }}
+    select
+        p.purchase_key,
+        p.customer_key,
+        p.time_order_received_utc,
+        p.order_date_utc,
+        p.order_date_berlin,
+        json_value(basket_item, '$.item_key') as item_key,
+        cast(json_value(basket_item, '$.item_count') as int64) as item_count
+    from {{ ref('int_wolt_purchase_logs_curated') }} as p,
+        unnest(json_query_array(p.item_basket_description_json, '$')) as basket_item
+    where json_value(basket_item, '$.item_key') is not null
+        and p.time_order_received_utc is not null
 ),
 priced as (
     select
@@ -15,7 +25,7 @@ priced as (
         b.item_key,
         b.item_count,
         s.item_key_sk,
-        s.item_scd_key,
+        s.item_scd_sk,
         s.item_name_en,
         s.item_name_de,
         s.item_name_preferred,

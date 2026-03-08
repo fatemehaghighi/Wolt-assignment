@@ -1,8 +1,7 @@
 with bounds as (
     select
-        min(order_date_berlin) as min_date,
-        max(order_date_berlin) as max_date
-    from {{ ref('stg_wolt_purchase_logs') }}
+        cast('{{ var("dim_date_start_date", "2023-01-01") }}' as date) as min_date,
+        date_add(current_date(), interval {{ var("dim_date_future_years", 3) }} year) as max_date
 ),
 dates as (
     select d as date_day

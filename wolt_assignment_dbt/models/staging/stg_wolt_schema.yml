@@ -2,54 +2,82 @@ version: 2
 
 models:
   - name: stg_wolt_item_logs
+    description: >
+      Staging model for raw item log events. Applies source-conformed transformations only:
+      renaming, type casting, and JSON field extraction. No business-rule filtering, deduplication,
+      or trust scoring is applied at this layer.
     columns:
       - name: log_item_id
+        description: Raw event identifier from source item logs.
         tests:
           - not_null
-          - unique
       - name: item_key
+        description: Business key of the catalog item referenced by the log event.
         tests:
           - not_null
       - name: time_log_created_utc
+        description: Parsed UTC timestamp when the item log event was created.
         tests:
           - not_null
+      - name: product_base_price_gross_eur
+        description: Base gross price extracted from payload price attributes.
 
   - name: stg_wolt_promos
+    description: >
+      Staging model for promo definitions with typed date and numeric fields only.
+      Business validation of promo windows is handled in tests/intermediate layers.
     columns:
       - name: item_key
+        description: Item business key the promo applies to.
         tests:
           - not_null
       - name: promo_start_date
+        description: Promo validity start date (inclusive).
         tests:
           - not_null
       - name: promo_end_date
+        description: Promo validity end date (exclusive by business rule in downstream logic).
         tests:
           - not_null
       - name: discount_pct
+        description: Discount percentage typed from raw source.
         tests:
           - not_null
 
   - name: stg_wolt_purchase_logs
+    description: >
+      Staging model for order/purchase events with timestamp/date typing and JSON parsing.
+      No business aggregations or derived quality filtering is applied in staging.
     columns:
       - name: purchase_key
+        description: Order identifier from source purchase logs.
         tests:
           - not_null
           - unique
       - name: customer_key
+        description: Customer identifier from source purchase logs.
         tests:
           - not_null
       - name: time_order_received_utc
+        description: Parsed UTC timestamp for order receipt.
         tests:
           - not_null
 
   - name: stg_wolt_order_items
+    description: >
+      Staging expansion of purchase basket JSON into one row per purchase x item entry.
+      This model keeps source-conformed parsing only; enrichment and business filtering
+      are performed in intermediate models.
     columns:
       - name: purchase_key
+        description: Parent order identifier.
         tests:
           - not_null
       - name: item_key
+        description: Item identifier extracted from basket payload.
         tests:
           - not_null
       - name: item_count
+        description: Ordered quantity extracted from basket payload.
         tests:
           - not_null

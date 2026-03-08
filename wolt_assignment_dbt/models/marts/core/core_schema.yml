@@ -2,6 +2,7 @@ version: 2
 
 models:
   - name: dim_date
+    description: Date dimension used by core facts and reporting aggregates.
     time_spine:
       standard_granularity_column: date_day
     columns:
@@ -12,8 +13,9 @@ models:
           - unique
 
   - name: dim_item_history
+    description: SCD2 item dimension keyed by surrogate keys with log-level lineage (`log_item_id`) for traceability.
     columns:
-      - name: item_scd_key
+      - name: item_scd_sk
         tests:
           - not_null
           - unique
@@ -22,20 +24,22 @@ models:
           - not_null
 
   - name: dim_item_current
+    description: Current-state item dimension view over item history, keyed by surrogate keys.
     columns:
       - name: item_key_sk
         tests:
           - not_null
           - unique
-      - name: item_scd_key
+      - name: item_scd_sk
         tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_item_history')
-                field: item_scd_key
+                field: item_scd_sk
 
   - name: dim_promo
+    description: Promo dimension keyed by surrogate keys, linked to item via item_key_sk.
     columns:
       - name: promo_key
         tests:
@@ -46,6 +50,7 @@ models:
           - not_null
 
   - name: dim_customer
+    description: Customer dimension with lifecycle metrics keyed by customer_sk only.
     columns:
       - name: customer_sk
         tests:
@@ -53,6 +58,7 @@ models:
           - unique
 
   - name: fct_order
+    description: Order-level fact table exposing warehouse surrogate keys for joins.
     columns:
       - name: order_sk
         tests:
@@ -74,6 +80,7 @@ models:
                 field: date_day
 
   - name: fct_order_item
+    description: Order-item-level fact table exposing warehouse surrogate keys for joins.
     columns:
       - name: order_item_sk
         tests:
@@ -93,3 +100,6 @@ models:
               arguments:
                 to: ref('dim_item_current')
                 field: item_key_sk
+      - name: item_scd_sk
+        tests:
+          - not_null

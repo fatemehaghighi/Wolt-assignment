@@ -1,3 +1,16 @@
+{{
+    config(
+        materialized='incremental',
+        incremental_strategy='merge',
+        unique_key=['as_of_run_date', 'date_day', 'item_category'],
+        on_schema_change='sync_all_columns',
+        partition_by={'field': 'as_of_run_date', 'data_type': 'date'},
+        cluster_by=['date_day', 'item_category'],
+        pre_hook=ensure_run_metadata_table(),
+        post_hook=upsert_run_metadata()
+    )
+}}
+
 with item_daily as (
     select
         oi.order_date,
@@ -29,6 +42,10 @@ order_daily as (
     group by 1, 2
 )
 select
+    {{ run_id_literal() }} as run_id,
+    {{ run_ts_literal() }} as as_of_run_ts,
+    {{ run_date_expr() }} as as_of_run_date,
+    '{{ var('publish_tag', 'scheduled') }}' as publish_tag,
     i.order_date as date_day,
     i.item_category,
     i.orders,

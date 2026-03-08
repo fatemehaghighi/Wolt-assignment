@@ -1,8 +1,6 @@
 select
     order_sk,
     customer_sk,
-    purchase_key,
-    customer_key,
     time_order_received_utc as order_ts_utc,
     order_date_utc,
     order_date_berlin as order_date,

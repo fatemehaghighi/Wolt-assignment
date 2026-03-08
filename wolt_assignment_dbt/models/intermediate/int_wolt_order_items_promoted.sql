@@ -40,7 +40,7 @@ select
     item_key,
     item_count,
     item_key_sk,
-    item_scd_key,
+    item_scd_sk,
     item_name_en,
     item_name_de,
     item_name_preferred,

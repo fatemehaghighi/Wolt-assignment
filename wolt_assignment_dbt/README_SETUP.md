@@ -51,6 +51,26 @@ make dbt-run-prod
 make dbt-test-prod
 ```
 
+## 7) Weekly SCD2 safety backfill (recommended for late arrivals)
+
+Run a deeper incremental backfill for the item SCD2 chain:
+
+```bash
+make dbt-backfill-item-scd2-dev BACKFILL_DAYS=35
+```
+
+Optional periodic hard rebuild for complete timeline healing:
+
+```bash
+make dbt-backfill-item-scd2-dev-full
+```
+
+Corrective rebuild + tagged reporting snapshot publication:
+
+```bash
+make dbt-corrective-publish-dev BACKFILL_DAYS=35 PUBLISH_TAG=late_arrival_fix
+```
+
 ## Minimum IAM guidance
 
 For assignment scope, service accounts should typically have:

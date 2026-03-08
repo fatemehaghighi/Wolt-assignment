@@ -13,7 +13,7 @@ with orders as (
         courier_base_fee_eur,
         total_basket_value_eur + wolt_service_fee_eur as basket_plus_service_fee_eur,
         total_basket_value_eur + wolt_service_fee_eur + courier_base_fee_eur as total_customer_paid_eur
-    from {{ ref('stg_wolt_purchase_logs') }}
+    from {{ ref('int_wolt_purchase_logs_curated') }}
 ),
 order_item_metrics as (
     select

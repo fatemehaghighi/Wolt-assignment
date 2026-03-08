@@ -1,3 +1,14 @@
+{{
+    config(
+        materialized='incremental',
+        incremental_strategy='merge',
+        unique_key=['as_of_run_date', 'period_month', 'item_key_sk_1', 'item_key_sk_2'],
+        on_schema_change='sync_all_columns',
+        partition_by={'field': 'as_of_run_date', 'data_type': 'date'},
+        cluster_by=['period_month', 'item_key_sk_1', 'item_key_sk_2']
+    )
+}}
+
 with pairs as (
     select
         date_trunc(a.order_date, month) as period_month,
@@ -26,6 +37,10 @@ total_orders as (
     group by 1
 )
 select
+    {{ run_id_literal() }} as run_id,
+    {{ run_ts_literal() }} as as_of_run_ts,
+    {{ run_date_expr() }} as as_of_run_date,
+    '{{ var('publish_tag', 'scheduled') }}' as publish_tag,
     p.period_month,
     p.item_key_sk_1,
     p.item_key_sk_2,
