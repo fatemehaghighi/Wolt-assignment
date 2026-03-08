@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: raw
+    database: "{{ target.database }}"
+    schema: "{{ env_var('BQ_RAW_DATASET', 'raw') }}"
+    tables:
+      - name: wolt_snack_store_item_logs
+      - name: wolt_snack_store_promos
+      - name: wolt_snack_store_purchase_logs
+

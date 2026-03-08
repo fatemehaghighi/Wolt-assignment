@@ -1,0 +1,102 @@
+semantic_models:
+  - name: sm_order
+    model: ref('fct_order')
+    defaults:
+      agg_time_dimension: order_date
+    entities:
+      - name: order
+        type: primary
+        expr: order_sk
+      - name: customer
+        type: foreign
+        expr: customer_sk
+    dimensions:
+      - name: order_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: contains_promo_flag
+        type: categorical
+    measures:
+      - name: order_count
+        agg: count
+        expr: order_sk
+      - name: total_basket_value_eur
+        agg: sum
+        expr: total_basket_value_eur
+      - name: total_wolt_service_fee_eur
+        agg: sum
+        expr: wolt_service_fee_eur
+      - name: total_courier_base_fee_eur
+        agg: sum
+        expr: courier_base_fee_eur
+
+  - name: sm_order_item
+    model: ref('fct_order_item')
+    defaults:
+      agg_time_dimension: order_date
+    entities:
+      - name: order_item
+        type: primary
+        expr: order_item_sk
+      - name: order
+        type: foreign
+        expr: order_sk
+      - name: item
+        type: foreign
+        expr: item_key_sk
+    dimensions:
+      - name: order_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: item_category
+        type: categorical
+      - name: is_promo_item
+        type: categorical
+    measures:
+      - name: items_sold
+        agg: sum
+        expr: item_count
+      - name: line_revenue_eur
+        agg: sum
+        expr: line_final_amount_gross_eur
+      - name: line_discount_eur
+        agg: sum
+        expr: line_discount_amount_gross_eur
+
+metrics:
+  - name: total_orders
+    label: Total Orders
+    type: simple
+    type_params:
+      measure:
+        name: order_count
+
+  - name: basket_value_eur
+    label: Basket Value (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: total_basket_value_eur
+
+  - name: items_sold
+    label: Items Sold
+    type: simple
+    type_params:
+      measure:
+        name: items_sold
+
+  - name: line_revenue_eur
+    label: Line Revenue (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: line_revenue_eur
+
+  - name: line_discount_eur
+    label: Line Discount (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: line_discount_eur

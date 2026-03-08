@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: stg_wolt_item_logs
+    columns:
+      - name: log_item_id
+        tests:
+          - not_null
+          - unique
+      - name: item_key
+        tests:
+          - not_null
+      - name: time_log_created_utc
+        tests:
+          - not_null
+
+  - name: stg_wolt_promos
+    columns:
+      - name: item_key
+        tests:
+          - not_null
+      - name: promo_start_date
+        tests:
+          - not_null
+      - name: promo_end_date
+        tests:
+          - not_null
+      - name: discount_pct
+        tests:
+          - not_null
+
+  - name: stg_wolt_purchase_logs
+    columns:
+      - name: purchase_key
+        tests:
+          - not_null
+          - unique
+      - name: customer_key
+        tests:
+          - not_null
+      - name: time_order_received_utc
+        tests:
+          - not_null
+
+  - name: stg_wolt_order_items
+    columns:
+      - name: purchase_key
+        tests:
+          - not_null
+      - name: item_key
+        tests:
+          - not_null
+      - name: item_count
+        tests:
+          - not_null

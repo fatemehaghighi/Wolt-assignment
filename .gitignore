@@ -1,0 +1,35 @@
+# Python and virtual environments
+.venv/
+.gcloud/
+__pycache__/
+*.pyc
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+credentials/**/*.json
+*service-account*.json
+*gcp-key*.json
+
+# Keep credentials folder structure but never commit secrets
+credentials/*
+!credentials/.gitkeep
+
+# dbt artifacts
+logs/
+target/
+dbt_packages/
+*/target/
+*/dbt_packages/
+*/logs/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: rpt_category_daily
+    columns:
+      - name: date_day
+        tests:
+          - not_null
+      - name: item_category
+        tests:
+          - not_null
+
+  - name: rpt_customer_promo_behavior
+    columns:
+      - name: customer_sk
+        tests:
+          - not_null
+          - unique
+
+  - name: rpt_item_pair_affinity
+    columns:
+      - name: item_key_sk_1
+        tests:
+          - not_null
+      - name: item_key_sk_2
+        tests:
+          - not_null
