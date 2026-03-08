@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: rpt_category_daily
-    description: Daily category report snapshot with run-level audit columns for reproducibility.
+    description: Daily category report snapshot stored per run_id for run-level reproducibility.
     columns:
       - name: run_id
         tests:
@@ -21,7 +21,7 @@ models:
           - not_null
 
   - name: rpt_customer_promo_behavior
-    description: Customer promo behavior snapshot with run-level audit columns for daily history.
+    description: Customer promo behavior at item level, stored per run_id for run-level reproducibility.
     columns:
       - name: run_id
         tests:
@@ -35,9 +35,15 @@ models:
       - name: customer_sk
         tests:
           - not_null
+      - name: first_order_had_any_promo_item
+        tests:
+          - not_null
+      - name: first_order_had_only_promo_items
+        tests:
+          - not_null
 
   - name: rpt_item_pair_affinity
-    description: Item affinity snapshot with run-level audit columns for traceable metric history.
+    description: Item affinity snapshot stored per run_id for traceable run-level metric history.
     columns:
       - name: run_id
         tests:

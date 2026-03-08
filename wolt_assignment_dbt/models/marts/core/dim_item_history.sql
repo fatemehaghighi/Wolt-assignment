@@ -1,6 +1,7 @@
 select
     item_scd_sk,
     item_key_sk,
+    item_key,
     log_item_id,
     valid_from_utc,
     valid_to_utc,

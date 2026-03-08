@@ -2,7 +2,7 @@
     config(
         materialized='incremental',
         incremental_strategy='merge',
-        unique_key=['as_of_run_date', 'date_day', 'item_category'],
+        unique_key=['run_id', 'date_day', 'item_category'],
         on_schema_change='sync_all_columns',
         partition_by={'field': 'as_of_run_date', 'data_type': 'date'},
         cluster_by=['date_day', 'item_category'],

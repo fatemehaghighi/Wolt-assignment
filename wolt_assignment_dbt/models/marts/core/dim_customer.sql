@@ -1,6 +1,7 @@
 with customer_orders as (
     select
         customer_sk,
+        customer_key,
         order_ts_utc,
         order_date,
         total_basket_value_eur,
@@ -10,6 +11,7 @@ with customer_orders as (
 )
 select
     customer_sk,
+    any_value(customer_key) as customer_key,
     min(order_ts_utc) as first_order_ts_utc,
     max(order_ts_utc) as last_order_ts_utc,
     count(*) as lifetime_orders,

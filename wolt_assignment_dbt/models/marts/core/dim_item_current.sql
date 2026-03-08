@@ -1,4 +1,5 @@
 select
+    item_key,
     item_key_sk,
     item_scd_sk,
     item_name_en,

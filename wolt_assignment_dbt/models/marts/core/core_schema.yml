@@ -13,7 +13,7 @@ models:
           - unique
 
   - name: dim_item_history
-    description: SCD2 item dimension keyed by surrogate keys with log-level lineage (`log_item_id`) for traceability.
+    description: SCD2 item dimension exposing both surrogate and business keys with log-level lineage (`log_item_id`) for traceability.
     columns:
       - name: item_scd_sk
         tests:
@@ -22,10 +22,16 @@ models:
       - name: item_key_sk
         tests:
           - not_null
+      - name: item_key
+        tests:
+          - not_null
 
   - name: dim_item_current
-    description: Current-state item dimension view over item history, keyed by surrogate keys.
+    description: Current-state item dimension view over item history, exposing both surrogate and business keys.
     columns:
+      - name: item_key
+        tests:
+          - not_null
       - name: item_key_sk
         tests:
           - not_null
@@ -39,7 +45,7 @@ models:
                 field: item_scd_sk
 
   - name: dim_promo
-    description: Promo dimension keyed by surrogate keys, linked to item via item_key_sk.
+    description: Promo dimension exposing both item surrogate key and item business key.
     columns:
       - name: promo_key
         tests:
@@ -48,17 +54,23 @@ models:
       - name: item_key_sk
         tests:
           - not_null
+      - name: item_key
+        tests:
+          - not_null
 
   - name: dim_customer
-    description: Customer dimension with lifecycle metrics keyed by customer_sk only.
+    description: Customer dimension with lifecycle metrics exposing both customer surrogate and business keys.
     columns:
       - name: customer_sk
         tests:
           - not_null
           - unique
+      - name: customer_key
+        tests:
+          - not_null
 
   - name: fct_order
-    description: Order-level fact table exposing warehouse surrogate keys for joins.
+    description: Order-level fact table exposing both warehouse surrogate keys and source business keys.
     columns:
       - name: order_sk
         tests:
@@ -71,6 +83,12 @@ models:
               arguments:
                 to: ref('dim_customer')
                 field: customer_sk
+      - name: purchase_key
+        tests:
+          - not_null
+      - name: customer_key
+        tests:
+          - not_null
       - name: order_date
         tests:
           - not_null
@@ -80,7 +98,7 @@ models:
                 field: date_day
 
   - name: fct_order_item
-    description: Order-item-level fact table exposing warehouse surrogate keys for joins.
+    description: Order-item-level fact table exposing both warehouse surrogate keys and source business keys.
     columns:
       - name: order_item_sk
         tests:
@@ -93,6 +111,15 @@ models:
               arguments:
                 to: ref('fct_order')
                 field: order_sk
+      - name: purchase_key
+        tests:
+          - not_null
+      - name: customer_key
+        tests:
+          - not_null
+      - name: item_key
+        tests:
+          - not_null
       - name: item_key_sk
         tests:
           - not_null
@@ -103,3 +130,7 @@ models:
       - name: item_scd_sk
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_item_history')
+                field: item_scd_sk
