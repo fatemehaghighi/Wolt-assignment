@@ -24,7 +24,7 @@ help:
 	@echo "  dbt-backfill-orders-dev          Deep incremental backfill for purchase/order chain on dev"
 	@echo "  dbt-corrective-publish-dev       Corrective rebuild + reporting publish with run metadata"
 	@echo "  export-task1    Export Task 1 dataset to outputs/task1_order_item_enriched.csv"
-	@echo "  export-task2    Export Task 2 dataset to outputs/task2_category_growth_metrics.csv"
+	@echo "  export-task2    Export Task 2 datasets (category, promo behavior, item affinity)"
 	@echo "  build-presentation  Build presentation/wolt_assignment.pdf"
 	@echo "  package-submission  Build exports + presentation artifacts"
 

@@ -166,11 +166,10 @@
   - `assert_order_item_value_bounds.sql`
 
 ## Monetary Rounding Policy
-- Promo math follows explicit cent-level rounding:
-  - round unit discount to 2 decimals,
-  - derive rounded unit final price,
-  - derive rounded line values from rounded unit values.
-- This keeps basket reconciliation behavior explicit and stable as data volume scales.
+- Promo math is modeled with exact numeric arithmetic in transformation layer.
+- Intermediate/fact models do not force cent-level rounding of unit/line fields.
+- Presentation/reporting layers can apply display rounding where needed.
+- Reconciliation tolerance is intentionally strict (`0.001`) to stay source-conformant.
 
 ## Time Semantics
 - `fct_order` exposes both UTC and Berlin-local time fields:

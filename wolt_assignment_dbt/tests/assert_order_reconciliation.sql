@@ -19,4 +19,4 @@ select
 from orders as o
 left join modelled as m
     on o.order_sk = m.order_sk
-where abs(o.total_basket_value_eur - coalesce(m.modeled_basket_value_eur, 0)) > 0.05
+where abs(o.total_basket_value_eur - coalesce(m.modeled_basket_value_eur, 0)) > 0.001

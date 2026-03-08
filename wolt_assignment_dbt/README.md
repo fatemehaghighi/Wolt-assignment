@@ -68,3 +68,8 @@ Exports are written under `outputs/`.
 Export scripts:
 - `scripts/export_task1.sh`
 - `scripts/export_task2.sh`
+
+`export-task2` writes three files:
+- `outputs/task2_category_growth_metrics.csv`
+- `outputs/task2_customer_promo_behavior.csv`
+- `outputs/task2_item_pair_affinity.csv`

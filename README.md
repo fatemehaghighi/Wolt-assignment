@@ -73,6 +73,8 @@ Expected artifacts:
 
 - `outputs/task1_order_item_enriched.csv`
 - `outputs/task2_category_growth_metrics.csv`
+- `outputs/task2_customer_promo_behavior.csv`
+- `outputs/task2_item_pair_affinity.csv`
 - `presentation/wolt_assignment.pdf`
 
 ## More Details

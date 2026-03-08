@@ -4,6 +4,8 @@ Generated artifacts for assignment submission:
 
 - `task1_order_item_enriched.csv`
 - `task2_category_growth_metrics.csv`
+- `task2_customer_promo_behavior.csv`
+- `task2_item_pair_affinity.csv`
 
 Generate/rebuild with:
 

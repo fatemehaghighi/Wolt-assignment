@@ -40,8 +40,16 @@ item_labels as (
     select
         date_trunc(order_date, month) as period_month,
         item_key_sk,
-        any_value(item_name_preferred) as item_name_preferred,
-        any_value(item_category) as item_category
+        array_agg(
+            struct(order_ts_utc, item_name_preferred, item_category)
+            order by order_ts_utc desc
+            limit 1
+        )[offset(0)].item_name_preferred as item_name_preferred,
+        array_agg(
+            struct(order_ts_utc, item_name_preferred, item_category)
+            order by order_ts_utc desc
+            limit 1
+        )[offset(0)].item_category as item_category
     from {{ ref('fct_order_item') }}
     group by 1, 2
 )
