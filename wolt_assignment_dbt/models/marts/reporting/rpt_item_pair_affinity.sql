@@ -36,12 +36,14 @@ total_orders as (
     from {{ ref('fct_order') }}
     group by 1
 ),
-item_dim as (
+item_labels as (
     select
+        date_trunc(order_date, month) as period_month,
         item_key_sk,
-        item_name_preferred,
-        item_category
-    from {{ ref('dim_item_current') }}
+        any_value(item_name_preferred) as item_name_preferred,
+        any_value(item_category) as item_category
+    from {{ ref('fct_order_item') }}
+    group by 1, 2
 )
 select
     {{ run_id_literal() }} as run_id,
@@ -72,8 +74,10 @@ inner join item_orders as io2
     and p.item_key_sk_2 = io2.item_key_sk
 inner join total_orders as t
     on p.period_month = t.period_month
-left join item_dim as i1
-    on p.item_key_sk_1 = i1.item_key_sk
-left join item_dim as i2
-    on p.item_key_sk_2 = i2.item_key_sk
+left join item_labels as i1
+    on p.period_month = i1.period_month
+    and p.item_key_sk_1 = i1.item_key_sk
+left join item_labels as i2
+    on p.period_month = i2.period_month
+    and p.item_key_sk_2 = i2.item_key_sk
 where p.orders_together >= {{ var('pair_affinity_min_orders_together', 5) }}

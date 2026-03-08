@@ -11,3 +11,8 @@ Generate/rebuild with:
 make export-task1
 make export-task2
 ```
+
+Or call the scripts directly:
+
+- `scripts/export_task1.sh`
+- `scripts/export_task2.sh`

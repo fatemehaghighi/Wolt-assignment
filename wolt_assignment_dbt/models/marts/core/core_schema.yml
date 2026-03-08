@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: dim_date
-    description: Date dimension used by core facts and reporting aggregates.
+    description: Date dimension used by core facts and reporting aggregates, generated from fixed start/end bounds for reproducibility.
     time_spine:
       standard_granularity_column: date_day
     columns:
@@ -96,6 +96,12 @@ models:
               arguments:
                 to: ref('dim_date')
                 field: date_day
+      - name: order_ts_berlin
+        tests:
+          - not_null
+      - name: order_hour_berlin
+        tests:
+          - not_null
 
   - name: fct_order_item
     description: Order-item-level fact table exposing both warehouse surrogate keys and source business keys.

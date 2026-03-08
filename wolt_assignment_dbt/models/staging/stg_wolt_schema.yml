@@ -66,8 +66,8 @@ models:
   - name: stg_wolt_order_items
     description: >
       Staging expansion of purchase basket JSON into one row per purchase x item entry.
-      This model keeps source-conformed parsing only; enrichment and business filtering
-      are performed in intermediate models.
+      Duplicate item keys within the same purchase are defensively aggregated by summing `item_count`.
+      This model keeps source-conformed parsing only; enrichment is performed in intermediate models.
     columns:
       - name: purchase_key
         description: Parent order identifier.

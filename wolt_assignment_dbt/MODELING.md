@@ -44,6 +44,7 @@
 ## Grain Decisions
 - `fct_order`: one row per order.
 - `fct_order_item`: one row per order x item.
+- `stg_wolt_order_items`: one row per purchase x item_key after defensive aggregation of duplicate item_key entries in the same basket.
 
 ## Layer Structure
 - `models/staging`: source declarations + simple source-conformed models (renaming, type casting, JSON extraction; no business filtering/dedup).
@@ -69,6 +70,9 @@
 - Assumption:
   - item/purchase logs are append-oriented event streams with stable business keys.
   - if upstream emits very late historical corrections beyond lookback, increase lookback or run periodic full-refresh.
+- Operational backfill paths:
+  - item correction path: `make dbt-backfill-item-scd2-dev BACKFILL_DAYS=<N>`
+  - purchase/order correction path: `make dbt-backfill-orders-dev BACKFILL_DAYS=<N>`
 
 ## SCD2 Correctness Under Incremental Loads
 - `int_wolt_item_scd2` builds validity windows from curated item logs ordered by `time_log_created_utc` (tie-breaker: `log_item_id`).
@@ -141,6 +145,7 @@
   - promo/non-promo item counts and values.
 - `rpt_item_pair_affinity` includes readable item names/categories and uses configurable threshold var:
   - `pair_affinity_min_orders_together` (default `5`).
+- Pair labels are sourced from order-time fact context (`fct_order_item` by month), not current-state-only item dimension labels.
 - `rpt_category_daily` semantics:
   - customer counts are category-attributed (one customer can appear in multiple categories on the same day),
   - `avg_total_items_per_order_for_orders_with_category` is average full basket size for orders containing the category.
@@ -157,3 +162,20 @@
   - `assert_no_negative_values.sql`
   - `assert_no_overlapping_item_versions.sql`
   - `assert_order_reconciliation.sql`
+  - `assert_non_negative_delivery_distance.sql`
+  - `assert_order_item_value_bounds.sql`
+
+## Monetary Rounding Policy
+- Promo math follows explicit cent-level rounding:
+  - round unit discount to 2 decimals,
+  - derive rounded unit final price,
+  - derive rounded line values from rounded unit values.
+- This keeps basket reconciliation behavior explicit and stable as data volume scales.
+
+## Time Semantics
+- `fct_order` exposes both UTC and Berlin-local time fields:
+  - `order_ts_utc`, `order_hour_utc`
+  - `order_ts_berlin`, `order_hour_berlin`
+- `dim_date` is deterministic and reproducible using fixed vars:
+  - `dim_date_start_date`
+  - `dim_date_end_date`

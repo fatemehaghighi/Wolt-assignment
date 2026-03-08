@@ -1,7 +1,7 @@
 with bounds as (
     select
-        cast('{{ var("dim_date_start_date", "2023-01-01") }}' as date) as min_date,
-        date_add(current_date(), interval {{ var("dim_date_future_years", 3) }} year) as max_date
+        cast('{{ var("dim_date_start_date", "2019-01-01") }}' as date) as min_date,
+        cast('{{ var("dim_date_end_date", "2026-12-31") }}' as date) as max_date
 ),
 dates as (
     select d as date_day

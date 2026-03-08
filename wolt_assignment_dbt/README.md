@@ -25,12 +25,13 @@ dbt project for the Wolt assignment using a 3-layer warehouse model:
 
 - Curated intermediate models support incremental processing with metadata watermarks (`_elt_watermarks`).
 - Backfill safety is handled by configurable lookback windows and periodic deeper backfills.
+- `dim_date` is deterministic via vars (`dim_date_start_date`, `dim_date_end_date`) for reproducible outputs.
 
 ## Reporting Marts
 
 - `rpt_category_daily`: daily category KPIs, category-attributed customer counts
 - `rpt_customer_promo_behavior`: customer promo behavior computed from item-level promo vs non-promo composition
-- `rpt_item_pair_affinity`: monthly item-pair affinity with readable item names
+- `rpt_item_pair_affinity`: monthly item-pair affinity with month-context item labels from order-time facts
 
 Reporting tables include `run_id`, `as_of_run_ts`, `as_of_run_date`, and `publish_tag`.
 Unique keys are run-level (`run_id` + grain columns) for reproducible run history.
@@ -48,6 +49,10 @@ Unique keys are run-level (`run_id` + grain columns) for reproducible run histor
 # full refresh
 ./scripts/dbt.sh build --target dev --full-refresh
 
+# deep backfills
+make dbt-backfill-item-scd2-dev BACKFILL_DAYS=35
+make dbt-backfill-orders-dev BACKFILL_DAYS=35
+
 # targeted reporting full refresh
 ./scripts/dbt.sh build --target dev --full-refresh --select rpt_category_daily rpt_customer_promo_behavior rpt_item_pair_affinity
 ```
@@ -60,3 +65,6 @@ make export-task2
 ```
 
 Exports are written under `outputs/`.
+Export scripts:
+- `scripts/export_task1.sh`
+- `scripts/export_task2.sh`

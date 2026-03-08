@@ -17,6 +17,7 @@ Production-style analytics engineering project for Wolt assignment on BigQuery +
 - `fct_order_item`: order-item grain for promo analysis, category/item analytics, and affinity
 
 Keeping these grains separate avoids metric duplication and simplifies joins.
+Order facts expose both UTC and Berlin-local time fields (`order_ts_utc`, `order_ts_berlin`, `order_hour_utc`, `order_hour_berlin`).
 
 ## Promo Logic (Task 2)
 
@@ -52,6 +53,8 @@ make dbt-build-dev
 make dbt-debug-dev
 ./scripts/dbt.sh build --target dev
 ./scripts/dbt.sh build --target dev --full-refresh
+make dbt-backfill-item-scd2-dev BACKFILL_DAYS=35
+make dbt-backfill-orders-dev BACKFILL_DAYS=35
 ```
 
 ## Export Final Datasets
@@ -60,6 +63,11 @@ make dbt-debug-dev
 make export-task1
 make export-task2
 ```
+
+Underlying scripts:
+
+- `scripts/export_task1.sh`
+- `scripts/export_task2.sh`
 
 Expected artifacts:
 

@@ -54,10 +54,25 @@ select
     promo_type,
     coalesce(discount_pct, 0) as discount_pct_applied,
     coalesce(discount_pct, 0) > 0 as is_promo_item,
-    coalesce(unit_base_price_gross_eur, 0) * cast(item_count as numeric) as line_base_amount_gross_eur,
-    coalesce(unit_base_price_gross_eur, 0) * (coalesce(discount_pct, 0) / 100.0) as unit_discount_amount_gross_eur,
-    coalesce(unit_base_price_gross_eur, 0) * (1 - (coalesce(discount_pct, 0) / 100.0)) as unit_final_price_gross_eur,
-    coalesce(unit_base_price_gross_eur, 0) * cast(item_count as numeric) * (coalesce(discount_pct, 0) / 100.0) as line_discount_amount_gross_eur,
-    coalesce(unit_base_price_gross_eur, 0) * cast(item_count as numeric) * (1 - (coalesce(discount_pct, 0) / 100.0)) as line_final_amount_gross_eur
+    round(coalesce(unit_base_price_gross_eur, 0) * cast(item_count as numeric), 2) as line_base_amount_gross_eur,
+    round(coalesce(unit_base_price_gross_eur, 0) * (coalesce(discount_pct, 0) / 100.0), 2) as unit_discount_amount_gross_eur,
+    round(
+        coalesce(unit_base_price_gross_eur, 0)
+        - round(coalesce(unit_base_price_gross_eur, 0) * (coalesce(discount_pct, 0) / 100.0), 2),
+        2
+    ) as unit_final_price_gross_eur,
+    round(
+        round(coalesce(unit_base_price_gross_eur, 0) * (coalesce(discount_pct, 0) / 100.0), 2)
+        * cast(item_count as numeric),
+        2
+    ) as line_discount_amount_gross_eur,
+    round(
+        round(
+            coalesce(unit_base_price_gross_eur, 0)
+            - round(coalesce(unit_base_price_gross_eur, 0) * (coalesce(discount_pct, 0) / 100.0), 2),
+            2
+        ) * cast(item_count as numeric),
+        2
+    ) as line_final_amount_gross_eur
 from matched
 where promo_rank = 1

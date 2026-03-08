@@ -13,6 +13,7 @@ with order_level_item_mix as (
     select
         oi.customer_sk,
         oi.order_sk,
+        any_value(o.customer_key) as customer_key,
         any_value(o.order_ts_utc) as order_ts_utc,
         any_value(o.is_first_order_for_customer) as is_first_order_for_customer,
         sum(case when oi.is_promo_item then oi.item_count else 0 end) as promo_item_count,
@@ -27,6 +28,7 @@ with order_level_item_mix as (
 customer_rollup as (
     select
         customer_sk,
+        any_value(customer_key) as customer_key,
         min(order_ts_utc) as first_order_ts_utc,
         count(*) as lifetime_orders,
         sum(cast(promo_item_count > 0 as int64)) as promo_orders,
@@ -46,6 +48,7 @@ select
     {{ run_date_expr() }} as as_of_run_date,
     '{{ var('publish_tag', 'scheduled') }}' as publish_tag,
     customer_sk,
+    customer_key,
     first_order_ts_utc,
     first_order_had_any_promo_item,
     first_order_had_only_promo_items,

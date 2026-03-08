@@ -59,6 +59,12 @@ Run a deeper incremental backfill for the item SCD2 chain:
 make dbt-backfill-item-scd2-dev BACKFILL_DAYS=35
 ```
 
+Purchase/order-chain deep backfill (for late/corrected purchase events):
+
+```bash
+make dbt-backfill-orders-dev BACKFILL_DAYS=35
+```
+
 Optional periodic hard rebuild for complete timeline healing:
 
 ```bash
