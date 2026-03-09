@@ -133,6 +133,11 @@
   - `fct_order` keyed by `order_sk`,
   - `fct_order_item` keyed by `order_item_sk`.
 - Incremental cutoff for facts uses watermark table lookups (`_elt_watermarks`) with configurable lookback (`incremental_lookback_days`) to avoid full table rebuilds while still capturing late-arriving data.
+- Dimension strategy is mixed by correctness/cost profile:
+  - `dim_customer`: incremental `merge` keyed by `customer_sk` with watermark-driven affected-customer recomputation.
+  - `dim_item_current`: incremental `merge` keyed by `item_key_sk` with watermark-driven affected-item recomputation.
+  - `dim_promo`: incremental `merge` keyed by `promo_key` (low-churn dimensional append/update pattern).
+  - `dim_item_history`: intentionally kept as full table over SCD2 source for deterministic history correctness (avoids partial-window SCD drift risk).
 - High-use dimensions are clustered (and where sensible, partitioned):
   - `dim_item_history`: partition by `valid_from_utc`, cluster by `item_key_sk`, `item_key`, `is_current`.
   - `dim_promo`: partition by `promo_start_date`, cluster by `item_key_sk`, `promo_type`.

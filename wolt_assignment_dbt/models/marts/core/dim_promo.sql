@@ -1,5 +1,9 @@
 {{
     config(
+        materialized='incremental',
+        incremental_strategy='merge',
+        unique_key='promo_key',
+        on_schema_change='sync_all_columns',
         partition_by={'field': 'promo_start_date', 'data_type': 'date'},
         cluster_by=['item_key_sk', 'promo_type']
     )

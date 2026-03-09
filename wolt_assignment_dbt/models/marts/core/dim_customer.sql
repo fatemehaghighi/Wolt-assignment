@@ -1,10 +1,16 @@
 {{
     config(
+        materialized='incremental',
+        incremental_strategy='merge',
+        unique_key='customer_sk',
+        on_schema_change='sync_all_columns',
+        pre_hook=[ensure_watermark_table()] if var('enable_watermark_checks', true) else [],
+        post_hook=[upsert_model_watermark('dim_customer', 'last_order_ts_utc')] if var('enable_watermark_checks', true) else [],
         cluster_by=['customer_sk', 'customer_key']
     )
 }}
 
-with customer_orders as (
+with source_orders as (
     select
         customer_sk,
         customer_key,
@@ -14,6 +20,37 @@ with customer_orders as (
         contains_promo_flag,
         is_first_order_for_customer
     from {{ ref('fct_order') }}
+),
+affected_customers as (
+    {% if is_incremental() %}
+        select distinct customer_sk
+        from source_orders
+        where order_ts_utc >= (
+            timestamp_sub(
+                {% if var('enable_watermark_checks', true) %}
+                    {{ watermark_lookup_expr('dim_customer') }}
+                {% else %}
+                    (
+                        select coalesce(
+                            max(last_order_ts_utc),
+                            timestamp('1900-01-01 00:00:00+00')
+                        )
+                        from {{ this }}
+                    )
+                {% endif %},
+                interval {{ var('incremental_lookback_days', 7) }} day
+            )
+        )
+    {% else %}
+        select distinct customer_sk
+        from source_orders
+    {% endif %}
+),
+customer_orders as (
+    select s.*
+    from source_orders as s
+    inner join affected_customers as a
+        on s.customer_sk = a.customer_sk
 )
 select
     customer_sk,
