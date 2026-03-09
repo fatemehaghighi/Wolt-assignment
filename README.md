@@ -80,5 +80,7 @@ Expected artifacts:
 ## More Details
 
 - setup notes: [SETUP_LOG.md](SETUP_LOG.md)
+- logical validation report: [LOGICAL_VALIDATION_REPORT.md](LOGICAL_VALIDATION_REPORT.md)
+- logical validation SQL checks: [sql/logical_validation_checks.sql](sql/logical_validation_checks.sql)
 - modeling guide: [wolt_assignment_dbt/MODELING.md](wolt_assignment_dbt/MODELING.md)
 - dbt project guide: [wolt_assignment_dbt/README.md](wolt_assignment_dbt/README.md)

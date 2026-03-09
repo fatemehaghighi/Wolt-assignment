@@ -33,7 +33,7 @@ setup-env:
 	@echo "Prepared .env (edit values before running dbt)."
 
 validate-env:
-	@set -a; source .env; set +a; ./scripts/validate_env.sh
+	@./scripts/validate_env.sh
 
 upload-raw:
 	@./ingestion/upload_raw_to_gcs.sh
@@ -44,37 +44,37 @@ load-raw:
 ingest-raw: upload-raw load-raw
 
 dbt-debug-dev:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && dbt debug --profiles-dir . --target dev
+	@./scripts/dbt.sh debug --target dev
 
 dbt-debug-prod:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && dbt debug --profiles-dir . --target prod
+	@./scripts/dbt.sh debug --target prod
 
 dbt-run-dev:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && dbt run --profiles-dir . --target dev
+	@./scripts/dbt.sh run --target dev
 
 dbt-test-dev:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && dbt test --profiles-dir . --target dev
+	@./scripts/dbt.sh test --target dev
 
 dbt-build-dev:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && dbt build --profiles-dir . --target dev
+	@./scripts/dbt.sh build --target dev
 
 dbt-run-prod:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && dbt run --profiles-dir . --target prod
+	@./scripts/dbt.sh run --target prod
 
 dbt-test-prod:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && dbt test --profiles-dir . --target prod
+	@./scripts/dbt.sh test --target prod
 
 dbt-backfill-item-scd2-dev:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && dbt run --profiles-dir . --target dev --select +int_wolt_item_scd2+ --vars '{"incremental_lookback_days": $(BACKFILL_DAYS), "enable_dev_sampling": false, "enable_watermark_checks": true}'
+	@./scripts/dbt.sh run --target dev --select +int_wolt_item_scd2+ --vars '{"incremental_lookback_days": $(BACKFILL_DAYS), "enable_dev_sampling": false, "enable_watermark_checks": true}'
 
 dbt-backfill-item-scd2-dev-full:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && dbt run --profiles-dir . --target dev --full-refresh --select +int_wolt_item_scd2+ --vars '{"enable_dev_sampling": false, "enable_watermark_checks": true}'
+	@./scripts/dbt.sh run --target dev --full-refresh --select +int_wolt_item_scd2+ --vars '{"enable_dev_sampling": false, "enable_watermark_checks": true}'
 
 dbt-backfill-orders-dev:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && dbt run --profiles-dir . --target dev --select +int_wolt_purchase_logs_curated+ marts.core marts.reporting --vars '{"incremental_lookback_days": $(BACKFILL_DAYS), "enable_dev_sampling": false, "enable_watermark_checks": true}'
+	@./scripts/dbt.sh run --target dev --select +int_wolt_purchase_logs_curated+ marts.core marts.reporting --vars '{"incremental_lookback_days": $(BACKFILL_DAYS), "enable_dev_sampling": false, "enable_watermark_checks": true}'
 
 dbt-corrective-publish-dev:
-	@set -a; source .env; set +a; source .venv/bin/activate; cd wolt_assignment_dbt && RUN_ID=$$(date -u +%Y%m%dT%H%M%SZ) && AS_OF_RUN_TS=$$(date -u +"%Y-%m-%d %H:%M:%S+00:00") && dbt run --profiles-dir . --target dev --select +int_wolt_item_scd2+ marts.reporting --vars "{\"incremental_lookback_days\": $(BACKFILL_DAYS), \"enable_dev_sampling\": false, \"enable_watermark_checks\": true, \"publish_tag\": \"$(PUBLISH_TAG)\", \"run_id\": \"$$RUN_ID\", \"as_of_run_ts\": \"$$AS_OF_RUN_TS\"}"
+	@RUN_ID=$$(date -u +%Y%m%dT%H%M%SZ) && AS_OF_RUN_TS=$$(date -u +"%Y-%m-%d %H:%M:%S+00:00") && ./scripts/dbt.sh run --target dev --select +int_wolt_item_scd2+ marts.reporting --vars "{\"incremental_lookback_days\": $(BACKFILL_DAYS), \"enable_dev_sampling\": false, \"enable_watermark_checks\": true, \"publish_tag\": \"$(PUBLISH_TAG)\", \"run_id\": \"$$RUN_ID\", \"as_of_run_ts\": \"$$AS_OF_RUN_TS\"}"
 
 export-task1:
 	@./scripts/export_task1.sh

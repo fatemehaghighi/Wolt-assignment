@@ -5,7 +5,9 @@
         unique_key=['run_id', 'customer_sk'],
         on_schema_change='sync_all_columns',
         partition_by={'field': 'as_of_run_date', 'data_type': 'date'},
-        cluster_by=['customer_sk']
+        cluster_by=['customer_sk'],
+        pre_hook=ensure_run_metadata_table(),
+        post_hook=upsert_run_metadata()
     )
 }}
 

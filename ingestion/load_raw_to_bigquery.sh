@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ -f .env ]]; then
-  set -a
-  source .env
-  set +a
-fi
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# shellcheck disable=SC1091
+source "${repo_root}/scripts/load_env.sh"
+load_env_file "${repo_root}/.env"
 
 : "${DBT_BQ_DEV_PROJECT:?DBT_BQ_DEV_PROJECT is required}"
 : "${BQ_RAW_DATASET:=raw}"
@@ -17,7 +17,7 @@ project="${DBT_BQ_DEV_PROJECT}"
 dataset="${BQ_RAW_DATASET}"
 source_prefix="${GCS_BUCKET%/}/${GCS_RAW_PREFIX%/}"
 
-export CLOUDSDK_CONFIG="${CLOUDSDK_CONFIG:-$PWD/.gcloud}"
+export CLOUDSDK_CONFIG="${CLOUDSDK_CONFIG:-${repo_root}/.gcloud}"
 mkdir -p "${CLOUDSDK_CONFIG}"
 gcloud auth activate-service-account --key-file="${DBT_BQ_DEV_KEYFILE}" >/dev/null
 gcloud config set project "${project}" >/dev/null

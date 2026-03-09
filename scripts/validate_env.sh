@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# shellcheck disable=SC1091
+source "${repo_root}/scripts/load_env.sh"
+load_env_file "${repo_root}/.env"
+
 required_vars=(
   DBT_BQ_LOCATION
   BQ_RAW_DATASET
