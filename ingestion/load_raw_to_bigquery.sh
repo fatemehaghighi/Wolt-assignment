@@ -42,7 +42,7 @@ bq --project_id="${project}" load \
   --skip_leading_rows=1 \
   "${project}:${dataset}.wolt_snack_store_promos" \
   "${source_prefix}/Wolt_snack_store_promos.csv" \
-  "PROMO_START_DATE:STRING,PROMO_END_DATE:STRING,ITEM_KEY:STRING,PROMO_TYPE:STRING,DISCOUNT_IN_PERCENTAGE:INT64"
+  "PROMO_START_DATE:STRING,PROMO_END_DATE:STRING,ITEM_KEY:STRING,PROMO_TYPE:STRING,DISCOUNT_IN_PERCENTAGE:STRING"
 
 echo "Loading raw.wolt_snack_store_purchase_logs ..."
 bq --project_id="${project}" load \
@@ -52,6 +52,6 @@ bq --project_id="${project}" load \
   --allow_quoted_newlines \
   "${project}:${dataset}.wolt_snack_store_purchase_logs" \
   "${source_prefix}/Wolt_snack_store_purchase_logs.csv" \
-  "TIME_ORDER_RECEIVED_UTC:STRING,PURCHASE_KEY:STRING,CUSTOMER_KEY:STRING,DELIVERY_DISTANCE_LINE_METERS:INT64,WOLT_SERVICE_FEE:NUMERIC,COURIER_BASE_FEE:NUMERIC,TOTAL_BASKET_VALUE:NUMERIC,ITEM_BASKET_DESCRIPTION:STRING"
+  "TIME_ORDER_RECEIVED_UTC:STRING,PURCHASE_KEY:STRING,CUSTOMER_KEY:STRING,DELIVERY_DISTANCE_LINE_METERS:STRING,WOLT_SERVICE_FEE:STRING,COURIER_BASE_FEE:STRING,TOTAL_BASKET_VALUE:STRING,ITEM_BASKET_DESCRIPTION:STRING"
 
 echo "Raw load completed into ${project}:${dataset}."

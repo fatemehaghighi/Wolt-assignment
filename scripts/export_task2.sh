@@ -5,16 +5,21 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 mkdir -p "${repo_root}/outputs"
 
 if [[ -f "${repo_root}/.env" ]]; then
-  set -a
-  set +e
-  # shellcheck disable=SC1091
-  source "${repo_root}/.env"
-  env_source_status=$?
-  set -e
-  if [[ ${env_source_status} -ne 0 ]]; then
-    echo "Warning: failed to source .env cleanly; falling back to current environment variables." >&2
-  fi
-  set +a
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]] && continue
+    line="${line#export }"
+    key="${line%%=*}"
+    value="${line#*=}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    key="${key%"${key##*[![:space:]]}"}"
+    value="${value%$'\r'}"
+    if [[ "${value}" =~ ^\".*\"$ || "${value}" =~ ^\'.*\'$ ]]; then
+      value="${value:1:${#value}-2}"
+    fi
+    if [[ "${key}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+      export "${key}=${value}"
+    fi
+  done < "${repo_root}/.env"
 fi
 
 : "${DBT_BQ_DEV_PROJECT:?DBT_BQ_DEV_PROJECT is required}"
