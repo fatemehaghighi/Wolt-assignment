@@ -1,3 +1,10 @@
+{{
+    config(
+        partition_by={'field': 'promo_start_date', 'data_type': 'date'},
+        cluster_by=['item_key_sk', 'promo_type']
+    )
+}}
+
 select
     {{ surrogate_key(["item_key", "promo_start_date", "promo_end_date", "promo_type", "discount_pct"]) }} as promo_key,
     {{ surrogate_key(["item_key"]) }} as item_key_sk,

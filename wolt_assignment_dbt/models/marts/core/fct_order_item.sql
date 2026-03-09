@@ -1,3 +1,10 @@
+{{
+    config(
+        partition_by={'field': 'order_date', 'data_type': 'date'},
+        cluster_by=['order_sk', 'item_key_sk', 'customer_sk', 'is_promo_item']
+    )
+}}
+
 select
     order_item_sk,
     order_sk,

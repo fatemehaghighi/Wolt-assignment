@@ -1,3 +1,9 @@
+{{
+    config(
+        cluster_by=['item_key_sk', 'item_key']
+    )
+}}
+
 select
     item_key,
     item_key_sk,

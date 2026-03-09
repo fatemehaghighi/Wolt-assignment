@@ -1,3 +1,9 @@
+{{
+    config(
+        cluster_by=['customer_sk', 'customer_key']
+    )
+}}
+
 with customer_orders as (
     select
         customer_sk,

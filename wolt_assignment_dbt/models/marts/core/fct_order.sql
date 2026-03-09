@@ -1,3 +1,10 @@
+{{
+    config(
+        partition_by={'field': 'order_date', 'data_type': 'date'},
+        cluster_by=['customer_sk', 'order_sk', 'contains_promo_flag']
+    )
+}}
+
 select
     order_sk,
     customer_sk,

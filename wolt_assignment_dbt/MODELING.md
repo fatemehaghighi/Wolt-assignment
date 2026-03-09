@@ -125,6 +125,18 @@
 - `fct_order`: order-level financial and behavioral metrics.
 - `fct_order_item`: item-level pricing and promo metrics.
 
+## Physical Optimization (BigQuery)
+- Fact tables are partitioned and clustered for scan-cost and latency control at scale:
+  - `fct_order`: partition by `order_date`, cluster by `customer_sk`, `order_sk`, `contains_promo_flag`.
+  - `fct_order_item`: partition by `order_date`, cluster by `order_sk`, `item_key_sk`, `customer_sk`, `is_promo_item`.
+- High-use dimensions are clustered (and where sensible, partitioned):
+  - `dim_item_history`: partition by `valid_from_utc`, cluster by `item_key_sk`, `item_key`, `is_current`.
+  - `dim_promo`: partition by `promo_start_date`, cluster by `item_key_sk`, `promo_type`.
+  - `dim_item_current`, `dim_customer`: clustered on key columns.
+- Reporting marts are already optimized:
+  - partitioned by `as_of_run_date`,
+  - clustered by each mart's query grain columns.
+
 ## Intermediate Layer Notes
 - `stg_wolt_order_items` is the single basket JSON expansion model in staging.
 - `int_wolt_order_items_priced` reuses `stg_wolt_order_items` and joins curated purchase/order attributes, instead of re-exploding basket JSON in intermediate.
