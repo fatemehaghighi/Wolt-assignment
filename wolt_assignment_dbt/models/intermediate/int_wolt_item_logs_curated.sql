@@ -5,7 +5,11 @@
         unique_key='log_item_id',
         on_schema_change='sync_all_columns',
         pre_hook=[ensure_watermark_table()] if var('enable_watermark_checks', true) else [],
-        post_hook=[upsert_model_watermark('int_wolt_item_logs_curated', 'time_log_created_utc')] if var('enable_watermark_checks', true) else [],
+        post_hook=(
+            [upsert_model_watermark('int_wolt_item_logs_curated', 'time_log_created_utc'), backfill_last_modified_from_log_date()]
+            if var('enable_watermark_checks', true)
+            else [backfill_last_modified_from_log_date()]
+        ),
         partition_by={
             'field': 'time_log_created_utc',
             'data_type': 'timestamp',
@@ -71,6 +75,26 @@ deduped_best_record as (
             time_log_created_utc desc,
             payload_raw desc
     ) = 1
+),
+with_merge_status as (
+    select
+        s.*,
+        {% if is_incremental() %}
+            case
+                when t.log_item_id is null then s.time_log_created_utc
+                else current_timestamp()
+            end as last_modified_utc
+        {% else %}
+            s.time_log_created_utc as last_modified_utc
+        {% endif %}
+    from deduped_best_record as s
+    {% if is_incremental() %}
+        left join (
+            select log_item_id
+            from {{ this }}
+        ) as t
+            on s.log_item_id = t.log_item_id
+    {% endif %}
 )
 -- Final business-quality guardrail:
 -- keep only rows with positive, non-null product base price.
@@ -88,8 +112,9 @@ select
     product_base_price_gross_eur,
     vat_rate_pct,
     time_item_created_in_source_utc,
+    last_modified_utc,
     payload_json,
     payload_raw
-from deduped_best_record
+from with_merge_status
 where product_base_price_gross_eur is not null
     and product_base_price_gross_eur > 0

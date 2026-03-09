@@ -20,6 +20,12 @@ models:
         description: Event timestamp used for incremental watermarking and ordering.
         tests:
           - not_null
+      - name: last_modified_utc
+        description: >
+          Merge-tracking timestamp in UTC. For first insert it equals `time_log_created_utc`;
+          for matched incremental updates it is set to current run timestamp.
+        tests:
+          - not_null
       - name: product_base_price_gross_eur
         description: Trusted positive base price after curated quality filters.
         tests:
