@@ -14,7 +14,7 @@ Validate the pipeline deeply for logical correctness, not only test pass/fail:
 
 ## What Was Checked
 Full check SQL is versioned in:
-- [sql/logical_validation_checks.sql](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/sql/logical_validation_checks.sql)
+- [sql/logical_validation_checks.sql](sql/logical_validation_checks.sql)
 
 Execution command:
 ```bash
@@ -123,15 +123,15 @@ Problem:
 
 Fix:
 - Added shared env parser:
-  - [scripts/load_env.sh](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/scripts/load_env.sh)
+  - [scripts/load_env.sh](scripts/load_env.sh)
 - Rewired scripts/targets to use it:
-  - [scripts/dbt.sh](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/scripts/dbt.sh)
-  - [scripts/validate_env.sh](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/scripts/validate_env.sh)
-  - [scripts/export_task1.sh](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/scripts/export_task1.sh)
-  - [scripts/export_task2.sh](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/scripts/export_task2.sh)
-  - [ingestion/upload_raw_to_gcs.sh](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/ingestion/upload_raw_to_gcs.sh)
-  - [ingestion/load_raw_to_bigquery.sh](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/ingestion/load_raw_to_bigquery.sh)
-  - [Makefile](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/Makefile)
+  - [scripts/dbt.sh](scripts/dbt.sh)
+  - [scripts/validate_env.sh](scripts/validate_env.sh)
+  - [scripts/export_task1.sh](scripts/export_task1.sh)
+  - [scripts/export_task2.sh](scripts/export_task2.sh)
+  - [ingestion/upload_raw_to_gcs.sh](ingestion/upload_raw_to_gcs.sh)
+  - [ingestion/load_raw_to_bigquery.sh](ingestion/load_raw_to_bigquery.sh)
+  - [Makefile](Makefile)
 
 Result:
 - `make validate-env` and `make dbt-build-dev` run successfully without manual env workarounds.
@@ -142,8 +142,8 @@ Problem:
 
 Fix:
 - Added `pre_hook=ensure_run_metadata_table()` and `post_hook=upsert_run_metadata()` to:
-  - [rpt_customer_promo_behavior.sql](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/wolt_assignment_dbt/models/marts/reporting/rpt_customer_promo_behavior.sql)
-  - [rpt_item_pair_affinity.sql](/Users/fhaghighi/Job apply/Wolt/Wolt_Assignment/wolt_assignment_dbt/models/marts/reporting/rpt_item_pair_affinity.sql)
+  - [rpt_customer_promo_behavior.sql](wolt_assignment_dbt/models/marts/reporting/rpt_customer_promo_behavior.sql)
+  - [rpt_item_pair_affinity.sql](wolt_assignment_dbt/models/marts/reporting/rpt_item_pair_affinity.sql)
 
 Result:
 - `_run_metadata` now tracks all reporting marts.

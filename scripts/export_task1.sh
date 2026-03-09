@@ -20,22 +20,19 @@ bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
   --nouse_legacy_sql \
   --format=csv \
   --max_rows=1000000000 \
-  "select
-      oi.*,
-      o.order_ts_berlin,
-      o.order_hour_berlin,
-      o.delivery_distance_line_meters,
-      o.total_basket_value_eur,
-      o.wolt_service_fee_eur,
-      o.courier_base_fee_eur,
-      o.total_customer_paid_eur,
-      o.customer_order_number,
-      o.is_first_order_for_customer,
-      o.contains_promo_flag
-    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}.fct_order_item\` as oi
-    inner join \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}.fct_order\` as o
-      using (order_sk)
-    order by o.order_ts_utc, oi.order_item_sk" \
-  > "${repo_root}/outputs/task1_order_item_enriched.csv"
+  "select *
+    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}.fct_order\`
+    order by order_ts_utc, order_sk" \
+  > "${repo_root}/outputs/task1_orders.csv"
 
-echo "Wrote outputs/task1_order_item_enriched.csv"
+bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
+  --nouse_legacy_sql \
+  --format=csv \
+  --max_rows=1000000000 \
+  "select *
+    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}.fct_order_item\`
+    order by order_ts_utc, order_item_sk" \
+  > "${repo_root}/outputs/task1_order_items.csv"
+
+echo "Wrote outputs/task1_orders.csv"
+echo "Wrote outputs/task1_order_items.csv"

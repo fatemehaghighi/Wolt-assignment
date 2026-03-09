@@ -23,7 +23,7 @@ help:
 	@echo "  dbt-backfill-item-scd2-dev-full  Full-refresh rebuild for item SCD2 chain on dev"
 	@echo "  dbt-backfill-orders-dev          Deep incremental backfill for purchase/order chain on dev"
 	@echo "  dbt-corrective-publish-dev       Corrective rebuild + reporting publish with run metadata"
-	@echo "  export-task1    Export Task 1 dataset to outputs/task1_order_item_enriched.csv"
+	@echo "  export-task1    Export Task 1 datasets to outputs/task1_orders.csv and outputs/task1_order_items.csv"
 	@echo "  export-task2    Export Task 2 datasets (category, promo behavior, item affinity)"
 	@echo "  build-presentation  Build presentation/wolt_assignment.pdf"
 	@echo "  package-submission  Build exports + presentation artifacts"
@@ -84,6 +84,15 @@ export-task2:
 
 build-presentation:
 	@mkdir -p presentation
-	@cupsfilter -m application/pdf presentation/wolt_assignment.md > presentation/wolt_assignment.pdf
+	@if command -v marp >/dev/null 2>&1; then \
+		marp presentation/wolt_assignment.md --pdf --allow-local-files -o presentation/wolt_assignment.pdf; \
+	elif [ -f presentation/wolt_assignment.pdf ]; then \
+		echo "Marp not found; using committed presentation/wolt_assignment.pdf"; \
+	elif command -v npx >/dev/null 2>&1; then \
+		npx --yes @marp-team/marp-cli@4.0.3 presentation/wolt_assignment.md --pdf --allow-local-files -o presentation/wolt_assignment.pdf; \
+	else \
+		echo "No Marp runtime found and no committed presentation/wolt_assignment.pdf"; \
+		exit 1; \
+	fi
 
 package-submission: export-task1 export-task2 build-presentation

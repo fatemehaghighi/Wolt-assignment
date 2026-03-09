@@ -69,9 +69,14 @@ Underlying scripts:
 - `scripts/export_task1.sh`
 - `scripts/export_task2.sh`
 
+Task 1 is exported as two grains to avoid accidental double counting of order-level metrics:
+- `orders` grain: one row per order
+- `order_items` grain: one row per order x item
+
 Expected artifacts:
 
-- `outputs/task1_order_item_enriched.csv`
+- `outputs/task1_orders.csv`
+- `outputs/task1_order_items.csv`
 - `outputs/task2_category_growth_metrics.csv`
 - `outputs/task2_customer_promo_behavior.csv`
 - `outputs/task2_item_pair_affinity.csv`

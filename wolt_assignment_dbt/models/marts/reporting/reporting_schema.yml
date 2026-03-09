@@ -52,6 +52,10 @@ models:
       - name: first_order_had_only_promo_items
         tests:
           - not_null
+      - name: orders_with_any_promo_item
+        description: Count of customer orders that include at least one promo item.
+      - name: orders_with_no_promo_items
+        description: Count of customer orders that include zero promo items.
 
   - name: rpt_item_pair_affinity
     description: Item affinity snapshot stored per run_id for traceable run-level metric history.

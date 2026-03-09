@@ -18,7 +18,7 @@
 - This rule is implemented in `int_wolt_item_logs_curated.sql` and enforced by `assert_item_log_prices_positive_not_null.sql`.
 - Additional observation (needs further investigation):
   - In `stg_wolt_item_logs`, some rows have `brand_name` = `null`.
-  - Current count from local staging logic reproduction: `30` null-brand rows out of `471` staged rows (`~6.37%`).
+  - Current count from validation checks: `30` null-brand rows out of `648` staged rows (`~4.63%`), and `30` out of `471` curated rows.
   - Action item: investigate whether null brand is expected for specific categories/vendors or indicates upstream payload quality issues.
 
 ## Investigation Notes (How Issue Was Found)
@@ -36,10 +36,10 @@
   - `log_item_id = 25a4f5a95905b9c620551dd25face96c`
   - Payload value: `"time_item_created_in_source_utc": "2019-09-05 08:33:06.213"` (no trailing `Z`).
 - Root cause:
-  - Original parsing expected timezone suffix format (`... Z`) only.
+  - Source field `time_item_created_in_source_utc` in payload is stored without trailing timezone (e.g., `2019-09-05 08:33:06.213`).
 - Fix:
-  - Parse with timezone format first, then fallback to no-timezone format and assume UTC.
-  - Implemented in `stg_wolt_item_logs.sql` via `coalesce(safe.parse_timestamp(...Z), safe.parse_timestamp(..., 'UTC'))`.
+  - Parse directly with no-timezone format and explicit UTC assumption.
+  - Implemented in `stg_wolt_item_logs.sql` via `safe.parse_timestamp('%Y-%m-%d %H:%M:%E*S', ..., 'UTC')`.
 
 ## Grain Decisions
 - `fct_order`: one row per order.
@@ -150,7 +150,7 @@
   - customer counts are category-attributed (one customer can appear in multiple categories on the same day),
   - `avg_total_items_per_order_for_orders_with_category` is average full basket size for orders containing the category.
 - Run-level metadata is also written to `_run_metadata` for traceability and incident analysis.
-  - current write pattern: one run-level row is written by the reporting publication entry model.
+  - current write pattern: each reporting model writes one run-level row per run (`rpt_category_daily`, `rpt_customer_promo_behavior`, `rpt_item_pair_affinity`).
 - Rationale:
   - business can compare outputs across run dates,
   - discrepancies can be traced back to a specific corrective/backfill publication run.

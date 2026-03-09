@@ -69,6 +69,10 @@ Export scripts:
 - `scripts/export_task1.sh`
 - `scripts/export_task2.sh`
 
+`export-task1` writes two files to preserve grain separation:
+- `outputs/task1_orders.csv`
+- `outputs/task1_order_items.csv`
+
 `export-task2` writes three files:
 - `outputs/task2_category_growth_metrics.csv`
 - `outputs/task2_customer_promo_behavior.csv`
