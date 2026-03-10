@@ -24,7 +24,21 @@ bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
       select max(snapshot_date) as snapshot_date
       from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_category_daily\`
     )
-    select *
+    select
+      snapshot_date,
+      date_day,
+      item_category,
+      orders,
+      customers,
+      customers_whose_first_order_included_category,
+      customers_with_repeat_orders_including_category,
+      units_sold,
+      promo_units_sold,
+      order_item_rows_revenue_eur,
+      order_item_rows_discount_eur,
+      avg_selling_price_eur,
+      avg_order_units_for_orders_with_category,
+      avg_delivery_distance_meters
     from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_category_daily\`
     where snapshot_date = (select snapshot_date from latest_snapshot)
     order by date_day, item_category" \
@@ -38,7 +52,21 @@ bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
       select max(snapshot_date) as snapshot_date
       from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_customer_promo_behavior\`
     )
-    select *
+    select
+      snapshot_date,
+      customer_sk,
+      customer_key,
+      first_order_ts_utc,
+      first_order_had_any_promo_units,
+      first_order_had_only_promo_units,
+      orders_with_any_promo_units,
+      orders_with_no_promo_units,
+      promo_units_purchased,
+      non_promo_units_purchased,
+      promo_value_eur,
+      non_promo_value_eur,
+      promo_only_customer_flag,
+      lifetime_orders
     from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_customer_promo_behavior\`
     where snapshot_date = (select snapshot_date from latest_snapshot)
     order by customer_sk" \
@@ -52,7 +80,20 @@ bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
       select max(snapshot_date) as snapshot_date
       from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_item_pair_affinity\`
     )
-    select *
+    select
+      snapshot_date,
+      period_month,
+      item_key_sk_1,
+      item_key_sk_2,
+      item_name_preferred_1,
+      item_name_preferred_2,
+      item_category_1,
+      item_category_2,
+      orders_together,
+      support,
+      confidence_1_to_2,
+      confidence_2_to_1,
+      lift
     from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_item_pair_affinity\`
     where snapshot_date = (select snapshot_date from latest_snapshot)
     order by period_month, item_key_sk_1, item_key_sk_2" \

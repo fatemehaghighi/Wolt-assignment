@@ -12,6 +12,12 @@ Source: `analytics_dev_core` + `analytics_dev_rpt` (latest `snapshot_date`)
   - `Funny-Frisch Kettle Chips Sweet Chilli & Red Pepper, 120 g` (Crisp & Snacks)
   - `Tony’s Chocolonely Dark Milk Brownie Chocolate, 180 g` (Chocolate)
 
+Note on category history:
+- The same `item_key` can appear under different categories across time because category is modeled at order time using item SCD2 history.
+- For a unique product leaderboard independent of history, rank by `item_key` only and then map to either:
+  - current category, or
+  - dominant category over the selected analysis period.
+
 ## 2) Categories not improving
 - Clear negative Jan->Dec direction in 2023:
   - `Other Confectionary`: **-8,312.19 EUR** (Jan to Dec monthly revenue delta)

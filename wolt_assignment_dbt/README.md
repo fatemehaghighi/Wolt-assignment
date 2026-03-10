@@ -33,8 +33,9 @@ dbt project for the Wolt assignment using a 3-layer warehouse model:
 - `rpt_customer_promo_behavior`: customer promo behavior computed from item-level promo vs non-promo composition
 - `rpt_item_pair_affinity`: monthly item-pair affinity with month-context item labels from order-time facts
 
-Reporting tables include `run_id`, `as_of_run_ts`, `as_of_run_date`, and `publish_tag`.
-Unique keys are run-level (`run_id` + grain columns) for reproducible run history.
+Reporting marts are daily snapshots keyed by `snapshot_date` + business grain.
+Same-day reruns replace that day snapshot; new-day runs append new snapshots.
+Run-level metadata (`run_id`, `as_of_run_ts`, `as_of_run_date`, `publish_tag`) is stored in system metadata tables.
 
 ## Common Commands
 

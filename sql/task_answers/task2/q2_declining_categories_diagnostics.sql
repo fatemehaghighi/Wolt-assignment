@@ -17,7 +17,8 @@ monthly as (
         sum(order_item_rows_revenue_eur) as revenue_eur,
         sum(units_sold) as units_sold,
         sum(promo_units_sold) as promo_units_sold,
-        avg(avg_selling_price_eur) as avg_selling_price_eur,
+        -- Weighted ASP across days in month: total revenue / total units.
+        safe_divide(sum(order_item_rows_revenue_eur), nullif(sum(units_sold), 0)) as avg_selling_price_eur,
         avg(avg_order_units_for_orders_with_category) as avg_order_units
     from latest_cat
     group by month_start, item_category
