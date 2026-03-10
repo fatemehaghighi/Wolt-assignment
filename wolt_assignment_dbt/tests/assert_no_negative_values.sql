@@ -9,9 +9,9 @@ with orders as (
 order_items as (
     select
         order_item_sk,
-        item_count,
-        unit_base_price_gross_eur,
-        line_final_amount_gross_eur
+        units_in_order_item_row,
+        item_unit_base_price_gross_eur,
+        order_item_row_final_amount_gross_eur
     from {{ ref('fct_order_item') }}
 )
 select
@@ -28,6 +28,6 @@ select
     'order_items' as entity,
     cast(order_item_sk as string) as entity_id
 from order_items
-where item_count <= 0
-   or unit_base_price_gross_eur < 0
-   or line_final_amount_gross_eur < 0
+where units_in_order_item_row <= 0
+   or item_unit_base_price_gross_eur < 0
+   or order_item_row_final_amount_gross_eur < 0

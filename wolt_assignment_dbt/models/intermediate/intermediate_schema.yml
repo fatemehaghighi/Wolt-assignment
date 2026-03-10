@@ -5,7 +5,7 @@ models:
     description: >
       Curated item-log model built from staging item logs. Applies event-time validity filtering,
       optional dev sampling, incremental lookback processing, duplicate resolution by trust ranking,
-      and final positive-price quality gating.
+      same-item/same-timestamp conflict resolution, and final positive-price quality gating.
     columns:
       - name: log_item_id
         description: Unique curated log identifier after deduplication.
@@ -20,12 +20,6 @@ models:
         description: Event timestamp used for incremental watermarking and ordering.
         tests:
           - not_null
-      - name: last_modified_utc
-        description: >
-          Merge-tracking timestamp in UTC. For first insert it equals `time_log_created_utc`;
-          for matched incremental updates it is set to current run timestamp.
-        tests:
-          - not_null
       - name: product_base_price_gross_eur
         description: Trusted positive base price after curated quality filters.
         tests:
@@ -38,13 +32,16 @@ models:
       tables for max timestamp on each incremental run.
     columns:
       - name: purchase_key
+        description: Trusted unique order key used downstream as the order-grain backbone for Task 1 fee/revenue/cost metrics.
         tests:
           - not_null
           - unique
       - name: customer_key
+        description: Trusted customer business key used to derive first/repeat lifecycle and retention-related metrics.
         tests:
           - not_null
       - name: time_order_received_utc
+        description: Trusted order event time used for chronology, incremental cutoff watermarking, and SCD2 time-valid joins.
         tests:
           - not_null
 
@@ -52,7 +49,9 @@ models:
     description: >
       Item SCD2 model generated from curated item logs. Creates validity windows
       (`valid_from_utc`, `valid_to_utc`) per item timeline using event-time ordering,
-      with deterministic same-timestamp tie-breaking by log_item_id.
+      with deterministic ordering by (`time_log_created_utc`, `log_item_id`) and
+      no-op collapse (new version is emitted only when tracked item attributes change).
+      Upstream curated logic enforces one trusted row per (`item_key`, `time_log_created_utc`).
     columns:
       - name: item_scd_sk
         description: Deterministic surrogate key for each SCD2 version row.
@@ -78,41 +77,71 @@ models:
       curated order attributes plus item SCD2 state at order timestamp.
     columns:
       - name: order_item_sk
+        description: Surrogate key for order-item grain; enables stable joins and deduplicated item-level fact records.
         tests:
           - not_null
           - unique
       - name: order_sk
+        description: Order surrogate key for joining item-level pricing to order-level fees/customer context.
         tests:
           - not_null
       - name: customer_sk
+        description: Customer surrogate key inherited at order-item grain for promo and category behavior analysis.
         tests:
           - not_null
       - name: item_scd_sk
+        description: Historical item version key chosen at order timestamp; guarantees price/attribute lookup is time-correct.
         tests:
           - not_null
 
   - name: int_wolt_order_items_promoted
+    description: >
+      Applies promo rules to priced order-item rows using Berlin-local order date.
+      Join logic follows assignment semantics: `promo_start_date` is inclusive from
+      midnight local time and `promo_end_date` is exclusive from midnight local time,
+      so date-range matching is correct. If promo source evolves to timestamp-level
+      windows in future, this model should switch to Berlin-local timestamp matching.
     columns:
       - name: order_item_sk
+        description: Unique order-item key after promo matching and conflict-resolution ranking.
         tests:
           - not_null
           - unique
       - name: order_sk
+        description: Order surrogate key used for rollups to order-level promo and financial metrics.
         tests:
           - not_null
       - name: item_key_sk
+        description: Item entity surrogate key for dimensional joins (item/category reporting).
         tests:
           - not_null
 
   - name: int_wolt_orders_enriched
+    description: >
+      Order-grain enrichment model combining curated purchase logs with item-level aggregates
+      and customer order chronology. Includes both promo line metrics and promo unit metrics.
     columns:
       - name: order_sk
+        description: Final order-grain surrogate key used by `fct_order` and downstream reporting marts.
         tests:
           - not_null
           - unique
       - name: customer_sk
+        description: Customer surrogate key used for first/repeat and customer-level rollups.
         tests:
           - not_null
+      - name: promo_order_item_rows_in_order
+        description: >
+          Number of promo order-item rows in the order (row-level count). Example:
+          [A promo x3, B non-promo x2, C promo x1] => promo_order_item_rows_in_order = 2.
+      - name: promo_units_in_order
+        description: >
+          Number of promo units in the order (quantity-level count). Example:
+          [A promo x3, B non-promo x2, C promo x1] => promo_units_in_order = 4.
       - name: customer_order_number
+        description: >
+          Sequential order number per customer by event-time order
+          (`time_order_received_utc`, `purchase_key` tie-breaker). Used to derive
+          first-order vs repeat-order behavior.
         tests:
           - not_null

@@ -31,6 +31,23 @@ make dbt-build-dev
 
 ## Key Results
 
+### Item-Log Curation Reconciliation (New, Persistent Audit)
+- Added row-level audit model:
+  - [wolt_assignment_dbt/models/marts/audit/rpt_item_logs_curation_audit.sql](wolt_assignment_dbt/models/marts/audit/rpt_item_logs_curation_audit.sql)
+- Added one-row summary model:
+  - [wolt_assignment_dbt/models/marts/audit/rpt_item_logs_curation_audit_summary.sql](wolt_assignment_dbt/models/marts/audit/rpt_item_logs_curation_audit_summary.sql)
+- Added consistency test:
+  - [wolt_assignment_dbt/tests/assert_item_logs_curation_consistency.sql](wolt_assignment_dbt/tests/assert_item_logs_curation_consistency.sql)
+
+Purpose:
+- Explain exactly why row counts differ (`raw/stg` vs curated).
+- Show for each `log_item_id` whether curated inclusion is expected and whether it actually happened.
+- Fail CI/build if curated diverges from defined curation rules.
+
+Additional safeguards for item-history correctness:
+- [wolt_assignment_dbt/tests/assert_no_duplicate_item_timestamp_in_curated.sql](wolt_assignment_dbt/tests/assert_no_duplicate_item_timestamp_in_curated.sql)
+- [wolt_assignment_dbt/tests/assert_no_zero_or_negative_item_scd2_windows.sql](wolt_assignment_dbt/tests/assert_no_zero_or_negative_item_scd2_windows.sql)
+
 ### 1) Layer Consistency and Integrity
 - `stg_wolt_purchase_logs = 98,871`
 - `int_wolt_purchase_logs_curated = 98,871`

@@ -19,7 +19,8 @@
 {%- endmacro %}
 
 {% macro ensure_run_metadata_table() -%}
-    create table if not exists `{{ target.database }}`.`{{ target.schema }}`.`{{ var('run_metadata_table_name', '_run_metadata') }}` (
+    {{ ensure_system_schema_exists() }};
+    create table if not exists `{{ target.database }}`.`{{ system_schema_name() }}`.`{{ var('run_metadata_table_name', '_run_metadata') }}` (
         run_id string,
         model_name string,
         as_of_run_ts timestamp,
@@ -33,12 +34,12 @@
         updated_at timestamp
     )
     ;
-    alter table `{{ target.database }}`.`{{ target.schema }}`.`{{ var('run_metadata_table_name', '_run_metadata') }}`
+    alter table `{{ target.database }}`.`{{ system_schema_name() }}`.`{{ var('run_metadata_table_name', '_run_metadata') }}`
     add column if not exists model_name string
 {%- endmacro %}
 
 {% macro upsert_run_metadata() -%}
-    merge `{{ target.database }}`.`{{ target.schema }}`.`{{ var('run_metadata_table_name', '_run_metadata') }}` as tgt
+    merge `{{ target.database }}`.`{{ system_schema_name() }}`.`{{ var('run_metadata_table_name', '_run_metadata') }}` as tgt
     using (
         select
             {{ run_id_literal() }} as run_id,

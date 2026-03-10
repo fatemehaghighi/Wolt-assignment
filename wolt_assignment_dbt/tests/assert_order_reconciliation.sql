@@ -1,7 +1,7 @@
 with modelled as (
     select
         order_sk,
-        sum(line_final_amount_gross_eur) as modeled_basket_value_eur
+        sum(order_item_row_final_amount_gross_eur) as modeled_basket_value_eur
     from {{ ref('fct_order_item') }}
     group by order_sk
 ),

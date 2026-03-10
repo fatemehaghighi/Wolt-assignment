@@ -3,16 +3,15 @@ version: 2
 models:
   - name: rpt_category_daily
     description: >
-      Daily category report snapshot stored per run_id for run-level reproducibility.
-      Customer counts are category-attributed (a customer can appear in multiple categories in one day).
+      Daily category performance report (Task 2 Q1/Q2/Q4 and part of Q5), stored as one snapshot
+      per `snapshot_date`. Re-runs on the same day replace that day's snapshot; new days append.
+      Designed to explain which categories drive growth, which lag,
+      and how category demand evolves over time.
+      Customer counts are category-attributed
+      (a customer can appear in multiple categories in one day).
     columns:
-      - name: run_id
-        tests:
-          - not_null
-      - name: as_of_run_ts
-        tests:
-          - not_null
-      - name: as_of_run_date
+      - name: snapshot_date
+        description: Reporting snapshot publish date (one business snapshot version per day).
         tests:
           - not_null
       - name: date_day
@@ -21,23 +20,37 @@ models:
       - name: item_category
         tests:
           - not_null
-      - name: category_attributed_first_time_customers
-        description: Distinct customers whose first-ever order included this category on this day.
-      - name: category_attributed_repeat_customers
-        description: Distinct returning customers who bought this category on this day.
-      - name: avg_total_items_per_order_for_orders_with_category
-        description: Average full basket item count for orders that included this category.
+      - name: customers_whose_first_order_included_category
+        description: Distinct customers whose first-ever store order included this category on this day.
+      - name: customers_with_repeat_orders_including_category
+        description: Distinct customers with non-first orders that included this category on this day.
+      - name: avg_order_units_for_orders_with_category
+        description: Average total order units (full basket) for orders that included this category.
+      - name: order_item_rows_revenue_eur
+        description: Sum of order-item-row final amounts for this category/day.
+      - name: order_item_rows_discount_eur
+        description: Sum of order-item-row discount amounts for this category/day.
+      - name: promo_units_sold
+        description: Promo units sold in this category/day.
+      - name: units_sold
+        description: Total units sold in this category/day.
+      - name: avg_selling_price_eur
+        description: >
+          Weighted average selling price per unit for the category/day:
+          sum(order_item_rows_revenue_eur) / sum(units_sold).
+          Uses final paid amounts (discount-included), not simple avg of per-row unit prices.
+      - name: avg_delivery_distance_meters
+        description: Average delivery distance for orders containing the category (service area/ops context).
 
   - name: rpt_customer_promo_behavior
-    description: Customer promo behavior at item level, stored per run_id for run-level reproducibility.
+    description: >
+      Customer promo behavior report at item level (Task 2 Q5), stored as one snapshot per
+      `snapshot_date` (same-day reruns replace, new days append). Built to answer whether
+      first-time customers come through promotions and
+      whether their purchasing is promo-only or mixed.
     columns:
-      - name: run_id
-        tests:
-          - not_null
-      - name: as_of_run_ts
-        tests:
-          - not_null
-      - name: as_of_run_date
+      - name: snapshot_date
+        description: Reporting snapshot publish date (one business snapshot version per day).
         tests:
           - not_null
       - name: customer_sk
@@ -46,27 +59,38 @@ models:
       - name: customer_key
         tests:
           - not_null
-      - name: first_order_had_any_promo_item
+      - name: first_order_had_any_promo_units
+        description: True if customer's first order contained at least one promo unit.
         tests:
           - not_null
-      - name: first_order_had_only_promo_items
+      - name: first_order_had_only_promo_units
+        description: True if every purchased unit in customer's first order was promo.
         tests:
           - not_null
-      - name: orders_with_any_promo_item
-        description: Count of customer orders that include at least one promo item.
-      - name: orders_with_no_promo_items
-        description: Count of customer orders that include zero promo items.
+      - name: orders_with_any_promo_units
+        description: Count of customer orders that include at least one promo unit.
+      - name: orders_with_no_promo_units
+        description: Count of customer orders that include zero promo units.
+      - name: promo_units_purchased
+        description: Total promo units purchased by customer across lifetime orders.
+      - name: non_promo_units_purchased
+        description: Total non-promo units purchased by customer across lifetime orders.
+      - name: promo_value_eur
+        description: Total spend on promo units by customer across lifetime orders.
+      - name: non_promo_value_eur
+        description: Total spend on non-promo units by customer across lifetime orders.
+      - name: promo_only_customer_flag
+        description: True when customer bought only promo units (no non-promo units) across observed history.
 
   - name: rpt_item_pair_affinity
-    description: Item affinity snapshot stored per run_id for traceable run-level metric history.
+    description: >
+      Item pair affinity report (Task 2 Q3), stored as one snapshot per `snapshot_date`
+      (same-day reruns replace, new days append).
+      Quantifies "bought together" behavior and strength of association for basket design and
+      cross-sell opportunities.
     columns:
-      - name: run_id
-        tests:
-          - not_null
-      - name: as_of_run_ts
-        tests:
-          - not_null
-      - name: as_of_run_date
+      - name: snapshot_date
+        description: Reporting snapshot publish date (one business snapshot version per day).
         tests:
           - not_null
       - name: item_key_sk_1
@@ -79,3 +103,13 @@ models:
         description: Display name for item_key_sk_1 for business readability.
       - name: item_name_preferred_2
         description: Display name for item_key_sk_2 for business readability.
+      - name: orders_together
+        description: Number of distinct orders where both items appeared together.
+      - name: support
+        description: Share of monthly orders containing the pair.
+      - name: confidence_1_to_2
+        description: Probability of seeing item 2 when item 1 is present.
+      - name: confidence_2_to_1
+        description: Probability of seeing item 1 when item 2 is present.
+      - name: lift
+        description: Association strength relative to independent occurrence (>1 indicates positive affinity).

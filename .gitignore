@@ -28,6 +28,7 @@ dbt_packages/
 */target/
 */dbt_packages/
 */logs/
+.dagster_home/
 
 # OS/editor
 .DS_Store

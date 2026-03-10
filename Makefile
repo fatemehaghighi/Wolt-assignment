@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help setup-env validate-env upload-raw load-raw ingest-raw dbt-debug-dev dbt-debug-prod dbt-run-dev dbt-test-dev dbt-build-dev dbt-run-prod dbt-test-prod dbt-backfill-item-scd2-dev dbt-backfill-item-scd2-dev-full dbt-backfill-orders-dev dbt-corrective-publish-dev export-task1 export-task2 build-presentation package-submission
+.PHONY: help setup-env validate-env upload-raw load-raw ingest-raw dbt-debug-dev dbt-debug-prod dbt-run-dev dbt-test-dev dbt-build-dev dbt-run-prod dbt-test-prod dbt-backfill-item-scd2-dev dbt-backfill-item-scd2-dev-full dbt-backfill-orders-dev dbt-corrective-publish-dev export-task1 export-task2 dagster-dev dagster-materialize-now dagster-install-daily dagster-uninstall-daily build-presentation package-submission
 
 BACKFILL_DAYS ?= 35
 PUBLISH_TAG ?= corrective
@@ -25,6 +25,10 @@ help:
 	@echo "  dbt-corrective-publish-dev       Corrective rebuild + reporting publish with run metadata"
 	@echo "  export-task1    Export Task 1 datasets to outputs/task1_orders.csv and outputs/task1_order_items.csv"
 	@echo "  export-task2    Export Task 2 datasets (category, promo behavior, item affinity)"
+	@echo "  dagster-dev     Start Dagster UI with configured jobs/schedules"
+	@echo "  dagster-materialize-now  Trigger the daily Dagster job once from CLI"
+	@echo "  dagster-install-daily    Install macOS LaunchAgent to run Dagster daily job at 06:00"
+	@echo "  dagster-uninstall-daily  Remove macOS LaunchAgent daily schedule"
 	@echo "  build-presentation  Build presentation/wolt_assignment.pdf"
 	@echo "  package-submission  Build exports + presentation artifacts"
 
@@ -81,6 +85,18 @@ export-task1:
 
 export-task2:
 	@./scripts/export_task2.sh
+
+dagster-dev:
+	@./scripts/dagster_dev.sh
+
+dagster-materialize-now:
+	@export DAGSTER_HOME="$(PWD)/.dagster_home" && mkdir -p "$$DAGSTER_HOME" && dagster job launch -f orchestration/dagster_pipeline/defs.py -a defs --job wolt_daily_pipeline_job
+
+dagster-install-daily:
+	@./scripts/install_dagster_launchagent.sh
+
+dagster-uninstall-daily:
+	@./scripts/uninstall_dagster_launchagent.sh
 
 build-presentation:
 	@mkdir -p presentation

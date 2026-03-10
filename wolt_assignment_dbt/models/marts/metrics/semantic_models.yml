@@ -15,8 +15,9 @@ semantic_models:
         type: time
         type_params:
           time_granularity: day
-      - name: contains_promo_flag
+      - name: has_any_promo_units_in_order
         type: categorical
+        expr: has_any_promo_units_in_order
     measures:
       - name: order_count
         agg: count
@@ -55,15 +56,15 @@ semantic_models:
       - name: is_promo_item
         type: categorical
     measures:
-      - name: items_sold
+      - name: units_sold
         agg: sum
-        expr: item_count
+        expr: units_in_order_item_row
       - name: line_revenue_eur
         agg: sum
-        expr: line_final_amount_gross_eur
+        expr: order_item_row_final_amount_gross_eur
       - name: line_discount_eur
         agg: sum
-        expr: line_discount_amount_gross_eur
+        expr: order_item_row_discount_amount_gross_eur
 
 metrics:
   - name: total_orders
@@ -80,12 +81,12 @@ metrics:
       measure:
         name: total_basket_value_eur
 
-  - name: items_sold
-    label: Items Sold
+  - name: units_sold
+    label: Units Sold
     type: simple
     type_params:
       measure:
-        name: items_sold
+        name: units_sold
 
   - name: line_revenue_eur
     label: Line Revenue (EUR)

@@ -26,6 +26,12 @@
 - Rule applied in curated item logs:
   - keep positive/non-null price event
   - discard non-business-relevant null/negative duplicates
+- Re-published no-op item logs also observed (different log id/date, same item attributes).
+  - Example:
+    - `bcb18b1cff8a79f511e1d7afe55dbda6` (2022-12-30)
+    - `1ef4ee87a85529fcc2f0c88b57277f27` (2023-12-22)
+    - same `item_key` and same attributes
+  - SCD2 is configured to emit a new version only on actual attribute change (no-op collapse).
 - Basket JSON is defensively aggregated by `(purchase_key, item_key)` to avoid duplicate item rows in one order.
 
 ## 4) Category Growth Findings (Q1 vs Q4 2023 Revenue)
@@ -75,3 +81,29 @@ These are strong cross-sell candidates for bundle placement and recommendation r
 - Historical category/name changes can affect label interpretation; model now uses deterministic month-end labels in affinity.
 - Add store/service-area dimensions for localized growth decomposition.
 - Add margin/cost signals to distinguish revenue growth from profitability growth.
+
+## 9) Decision Flow (Why This Setup)
+
+This is the final reasoning path used to harden the pipeline:
+
+1. Keep strict layer boundaries:
+   - staging = source-conformed only
+   - intermediate = business logic and curation
+   - marts split into `core`, `reporting`, `audit`
+2. Harden item-log curation:
+   - resolve duplicate `log_item_id` conflicts
+   - resolve same `(item_key, timestamp)` conflicts deterministically
+   - keep only positive/non-null base price
+3. Protect SCD2 correctness:
+   - prevent duplicate item+timestamp rows upstream
+   - enforce no zero/negative validity windows
+4. Scale incrementals safely:
+   - watermark-driven cutoff + configurable lookback window
+   - explicit backfill playbook for very-late arrivals
+5. Keep explainability as a deliverable:
+   - reason-level audit marts in `marts/audit`
+   - consistency tests to detect silent logic drift
+
+Reference:
+- [Decision Flow Doc](../DECISION_FLOW.md)
+- [Logical Validation Report](../LOGICAL_VALIDATION_REPORT.md)

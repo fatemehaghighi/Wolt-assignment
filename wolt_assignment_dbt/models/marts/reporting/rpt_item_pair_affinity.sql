@@ -2,9 +2,9 @@
     config(
         materialized='incremental',
         incremental_strategy='merge',
-        unique_key=['run_id', 'period_month', 'item_key_sk_1', 'item_key_sk_2'],
+        unique_key=['snapshot_date', 'period_month', 'item_key_sk_1', 'item_key_sk_2'],
         on_schema_change='sync_all_columns',
-        partition_by={'field': 'as_of_run_date', 'data_type': 'date'},
+        partition_by={'field': 'snapshot_date', 'data_type': 'date'},
         cluster_by=['period_month', 'item_key_sk_1', 'item_key_sk_2'],
         pre_hook=ensure_run_metadata_table(),
         post_hook=upsert_run_metadata()
@@ -16,6 +16,7 @@ with pairs as (
         date_trunc(a.order_date, month) as period_month,
         least(a.item_key_sk, b.item_key_sk) as item_key_sk_1,
         greatest(a.item_key_sk, b.item_key_sk) as item_key_sk_2,
+        -- Business need (Task 2 Q3): identify products frequently bought together.
         count(distinct a.order_sk) as orders_together
     from {{ ref('fct_order_item') }} as a
     inner join {{ ref('fct_order_item') }} as b
@@ -56,10 +57,7 @@ item_labels as (
     group by 1, 2
 )
 select
-    {{ run_id_literal() }} as run_id,
-    {{ run_ts_literal() }} as as_of_run_ts,
-    {{ run_date_expr() }} as as_of_run_date,
-    '{{ var('publish_tag', 'scheduled') }}' as publish_tag,
+    {{ run_date_expr() }} as snapshot_date,
     p.period_month,
     p.item_key_sk_1,
     p.item_key_sk_2,
@@ -68,9 +66,14 @@ select
     coalesce(i1.item_category, 'Unknown') as item_category_1,
     coalesce(i2.item_category, 'Unknown') as item_category_2,
     p.orders_together,
+    -- Affinity metrics for business ranking/explanation:
+    -- support: share of orders containing this pair in month.
     safe_divide(p.orders_together, t.total_orders) as support,
+    -- confidence_1_to_2: probability of item 2 given item 1.
     safe_divide(p.orders_together, io1.item_orders) as confidence_1_to_2,
+    -- confidence_2_to_1: probability of item 1 given item 2.
     safe_divide(p.orders_together, io2.item_orders) as confidence_2_to_1,
+    -- lift > 1 indicates positive association beyond independent chance.
     safe_divide(
         safe_divide(p.orders_together, io1.item_orders),
         safe_divide(io2.item_orders, t.total_orders)
@@ -90,4 +93,5 @@ left join item_labels as i1
 left join item_labels as i2
     on p.period_month = i2.period_month
     and p.item_key_sk_2 = i2.item_key_sk
+-- Minimum co-occurrence threshold reduces noisy pairs in low-frequency tails.
 where p.orders_together >= {{ var('pair_affinity_min_orders_together', 5) }}

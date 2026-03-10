@@ -21,7 +21,7 @@ bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
   --format=csv \
   --max_rows=1000000000 \
   "select *
-    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}.fct_order\`
+    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_core.fct_order\`
     order by order_ts_utc, order_sk" \
   > "${repo_root}/outputs/task1_orders.csv"
 
@@ -30,7 +30,7 @@ bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
   --format=csv \
   --max_rows=1000000000 \
   "select *
-    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}.fct_order_item\`
+    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_core.fct_order_item\`
     order by order_ts_utc, order_item_sk" \
   > "${repo_root}/outputs/task1_order_items.csv"
 

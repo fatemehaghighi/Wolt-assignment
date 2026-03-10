@@ -5,8 +5,14 @@
         unique_key='item_key_sk',
         on_schema_change='sync_all_columns',
         pre_hook=[ensure_watermark_table()] if var('enable_watermark_checks', true) else [],
-        post_hook=[upsert_model_watermark('dim_item_current', 'current_valid_from_utc')] if var('enable_watermark_checks', true) else [],
-        cluster_by=['item_key_sk', 'item_key']
+        post_hook=[
+            upsert_model_watermark(
+                'dim_item_current',
+                'current_valid_from_utc',
+                '`' ~ target.database ~ '`.`' ~ target.schema ~ '_core`.`dim_item_current`'
+            )
+        ] if var('enable_watermark_checks', true) else [],
+        cluster_by=['item_key_sk']
     )
 }}
 
@@ -33,20 +39,7 @@ affected_items as (
         select distinct item_key_sk
         from {{ ref('dim_item_history') }}
         where valid_from_utc >= (
-            timestamp_sub(
-                {% if var('enable_watermark_checks', true) %}
-                    {{ watermark_lookup_expr('dim_item_current') }}
-                {% else %}
-                    (
-                        select coalesce(
-                            max(current_valid_from_utc),
-                            timestamp('1900-01-01 00:00:00+00')
-                        )
-                        from {{ this }}
-                    )
-                {% endif %},
-                interval {{ var('incremental_lookback_days', 7) }} day
-            )
+            {{ incremental_cutoff_expr('dim_item_current', 'current_valid_from_utc') }}
         )
     {% else %}
         select distinct item_key_sk

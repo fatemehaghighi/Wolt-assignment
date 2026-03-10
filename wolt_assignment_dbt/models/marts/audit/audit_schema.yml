@@ -1,0 +1,175 @@
+version: 2
+
+models:
+  - name: rpt_item_logs_curation_audit
+    description: >
+      Row-level audit for item-log curation. Compares each `log_item_id` across raw/staging/curated,
+      shows expected inclusion based on curation rules, and labels consistency status with explicit reason.
+    columns:
+      - name: log_item_id
+        tests:
+          - not_null
+          - unique
+      - name: raw_row_count
+        description: Number of raw rows for this `log_item_id`.
+      - name: stg_row_count
+        description: Number of staging rows for this `log_item_id`.
+      - name: expected_in_curated_flag
+        description: Whether the log should appear in curated according to curation logic.
+      - name: in_curated_flag
+        description: Whether the log actually exists in curated.
+      - name: expected_reason
+        description: Logical reason for inclusion or exclusion in curated.
+      - name: curation_consistency_status
+        description: Final status for expected-vs-actual curated membership.
+
+  - name: rpt_item_logs_curation_audit_summary
+    description: >
+      One-row summary of item-log row counts and curation coverage across raw/staging/curated,
+      including mismatch counters.
+    columns:
+      - name: raw_row_count
+        tests:
+          - not_null
+      - name: stg_row_count
+        tests:
+          - not_null
+      - name: curated_row_count
+        tests:
+          - not_null
+      - name: expected_in_curated_count
+        tests:
+          - not_null
+      - name: actually_in_curated_count
+        tests:
+          - not_null
+      - name: excluded_invalid_time_count
+        tests:
+          - not_null
+      - name: excluded_invalid_price_count
+        tests:
+          - not_null
+      - name: excluded_item_timestamp_conflict_count
+        tests:
+          - not_null
+      - name: error_expected_but_missing_count
+        tests:
+          - not_null
+      - name: error_unexpected_present_count
+        tests:
+          - not_null
+
+  - name: rpt_order_item_item_match_audit
+    description: >
+      Row-level audit of order-item rows that could not resolve to item dimensions
+      (`item_key_sk` or `item_scd_sk` is null). Used for late-arrival monitoring
+      without stopping core fact publishing.
+    columns:
+      - name: order_item_sk
+        tests:
+          - not_null
+          - unique
+      - name: purchase_key
+        tests:
+          - not_null
+      - name: item_key
+        tests:
+          - not_null
+      - name: item_match_status
+        tests:
+          - not_null
+
+  - name: rpt_order_item_item_match_audit_summary
+    description: >
+      One-row summary of unmatched order-item coverage: affected rows, purchases, items,
+      and first/latest unmatched timestamps.
+    columns:
+      - name: unmatched_order_item_rows
+        tests:
+          - not_null
+      - name: affected_purchase_count
+        tests:
+          - not_null
+      - name: affected_item_key_count
+        tests:
+          - not_null
+
+  - name: rpt_pipeline_row_flow_audit
+    description: >
+      Step-by-step pipeline flow audit across raw/staging/intermediate/marts.
+      Tracks row counts, distinct-key counts, expected grain behavior, and diagnostics
+      to explain where row deltas occur and why.
+    columns:
+      - name: chain_name
+        tests:
+          - not_null
+      - name: step_order
+        tests:
+          - not_null
+      - name: object_name
+        tests:
+          - not_null
+      - name: row_count
+        tests:
+          - not_null
+      - name: status
+        description: >
+          Step status label:
+          - baseline_reference: context baseline step (not pass/fail),
+          - matches_expectation: observed row-flow matches expected behavior,
+          - review_required: unexpected delta that should be investigated,
+          - attention_required: known risk condition that should be monitored.
+        tests:
+          - not_null
+
+  - name: rpt_pipeline_row_flow_audit_summary
+    description: >
+      One-row summary of flow-audit statuses for quick health checks.
+    columns:
+      - name: total_steps
+        tests:
+          - not_null
+      - name: matching_steps
+        tests:
+          - not_null
+      - name: attention_required_steps
+        tests:
+          - not_null
+      - name: review_required_steps
+        tests:
+          - not_null
+      - name: baseline_reference_steps
+        tests:
+          - not_null
+
+  - name: rpt_promo_item_coverage_audit
+    description: >
+      Promo-to-item coverage audit showing whether each promo rule maps to current item dimension.
+      Missing mappings indicate late-arrival or source-consistency issues.
+    columns:
+      - name: promo_sk
+        tests:
+          - not_null
+      - name: item_key
+        tests:
+          - not_null
+      - name: in_dim_item_current_flag
+        tests:
+          - not_null
+      - name: coverage_status
+        tests:
+          - not_null
+
+  - name: rpt_promo_item_coverage_audit_summary
+    description: >
+      One-row summary of promo coverage vs item dimension mapping.
+    columns:
+      - name: promo_row_count
+        tests:
+          - not_null
+      - name: promo_rows_mapped_to_item_dim_count
+        tests:
+          - not_null
+      - name: promo_rows_missing_item_dim_count
+        tests:
+          - not_null

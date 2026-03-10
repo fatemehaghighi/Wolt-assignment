@@ -1,12 +1,14 @@
 {{
     config(
         partition_by={'field': 'valid_from_utc', 'data_type': 'timestamp', 'granularity': 'day'},
-        cluster_by=['item_key_sk', 'item_key', 'is_current']
+        cluster_by=['item_key_sk', 'is_current']
     )
 }}
 
 select
+    -- Surrogate key for SCD2 version: hash(item_key, time_log_created_utc, log_item_id).
     item_scd_sk,
+    -- Stable item-level surrogate key: hash(item_key).
     item_key_sk,
     item_key,
     log_item_id,

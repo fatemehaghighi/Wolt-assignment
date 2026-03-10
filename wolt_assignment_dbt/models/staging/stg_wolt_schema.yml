@@ -12,7 +12,7 @@ models:
         tests:
           - not_null
       - name: item_key
-        description: Business key of the catalog item referenced by the log event.
+        description: Business key of the catalog item referenced by the log event; used to build item SCD2 history for Task 1 item/price-over-time analysis.
         tests:
           - not_null
       - name: time_log_created_utc
@@ -20,7 +20,7 @@ models:
         tests:
           - not_null
       - name: product_base_price_gross_eur
-        description: Base gross price extracted from payload price attributes.
+        description: Base gross price extracted from payload price attributes; input for item-level pricing and promo-discount calculations.
 
   - name: stg_wolt_promos
     description: >
@@ -28,19 +28,19 @@ models:
       Business validation of promo windows is handled in tests/intermediate layers.
     columns:
       - name: item_key
-        description: Item business key the promo applies to.
+        description: Item business key the promo applies to; used to join promo rules to order-item rows for Task 1/Task 2 promo questions.
         tests:
           - not_null
       - name: promo_start_date
-        description: Promo validity start date (inclusive).
+        description: Promo validity start date (inclusive from local midnight); used in Berlin-local date window join.
         tests:
           - not_null
       - name: promo_end_date
-        description: Promo validity end date (exclusive by business rule in downstream logic).
+        description: Promo validity end date (exclusive from local midnight); used to close promo applicability window.
         tests:
           - not_null
       - name: discount_pct
-        description: Discount percentage typed from raw source.
+        description: Discount percentage typed from raw source; used to compute discount amount and final paid item value.
         tests:
           - not_null
 
@@ -55,11 +55,11 @@ models:
           - not_null
           - unique
       - name: customer_key
-        description: Customer identifier from source purchase logs.
+        description: Customer identifier from source purchase logs; drives first/repeat behavior metrics and customer lifecycle derivations.
         tests:
           - not_null
       - name: time_order_received_utc
-        description: Parsed UTC timestamp for order receipt.
+        description: Parsed UTC timestamp for order receipt; canonical event-time used for order chronology and item-SCD2 point-in-time price joins.
         tests:
           - not_null
 
@@ -70,7 +70,7 @@ models:
       This model keeps source-conformed parsing only; enrichment is performed in intermediate models.
     columns:
       - name: purchase_key
-        description: Parent order identifier.
+        description: Parent order identifier; used to combine basket lines with order-level metrics (fees, distance, customer lifecycle).
         tests:
           - not_null
       - name: item_key
@@ -78,6 +78,6 @@ models:
         tests:
           - not_null
       - name: item_count
-        description: Ordered quantity extracted from basket payload.
+        description: Ordered quantity extracted from basket payload; used for unit-based metrics (items sold, promo item count, line values).
         tests:
           - not_null

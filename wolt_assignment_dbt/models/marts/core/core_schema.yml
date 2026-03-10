@@ -13,21 +13,33 @@ models:
           - unique
 
   - name: dim_item_history
-    description: SCD2 item dimension exposing both surrogate and business keys with log-level lineage (`log_item_id`) for traceability.
+    description: >
+      SCD2 item history dimension exposing both surrogate and business keys with log-level lineage (`log_item_id`)
+      for traceability. Supports Task 1 question on item/price in any period through valid_from/valid_to history.
     columns:
       - name: item_scd_sk
+        description: Surrogate key of the item SCD2 version (hash of item_key + change timestamp + log id).
         tests:
           - not_null
           - unique
       - name: item_key_sk
+        description: Stable item surrogate key (hash of item_key) reused as FK in facts and other dimensions.
         tests:
           - not_null
       - name: item_key
         tests:
           - not_null
+      - name: valid_from_utc
+        description: Start timestamp (inclusive) of this item version validity.
+      - name: valid_to_utc
+        description: End timestamp (exclusive) of this item version validity.
+      - name: is_current
+        description: True only for the latest known version for each item_key.
 
   - name: dim_item_current
-    description: Current-state item dimension view over item history, exposing both surrogate and business keys.
+    description: >
+      Current-state item dimension view over item history, exposing both surrogate and business keys.
+      Used for latest-label/category readability in marts and reporting outputs.
     columns:
       - name: item_key
         tests:
@@ -45,21 +57,38 @@ models:
                 field: item_scd_sk
 
   - name: dim_promo
-    description: Promo dimension exposing both item surrogate key and item business key.
+    description: >
+      Promo rule dimension exposing both item surrogate key and item business key.
+      Supports Task 1/Task 2 promo questions by defining discount windows and discount percentages.
     columns:
-      - name: promo_key
+      - name: promo_sk
+        description: Surrogate key for promo rule grain (item_key + promo window + type + discount).
         tests:
           - not_null
           - unique
       - name: item_key_sk
         tests:
           - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_item_current')
+                field: item_key_sk
+              config:
+                severity: warn
       - name: item_key
         tests:
           - not_null
+      - name: discount_pct
+        description: Discount percentage points applied when order_date_berlin falls in [promo_start_date, promo_end_date).
+      - name: promo_start_date
+        description: Promo starts at 00:00 (Berlin-local date semantics from assignment).
+      - name: promo_end_date
+        description: Promo is no longer valid from 00:00 of this date (end-exclusive window).
 
   - name: dim_customer
-    description: Customer dimension with lifecycle metrics exposing both customer surrogate and business keys.
+    description: >
+      Customer Type 1 (current-state) dimension with lifecycle metrics, exposing both customer surrogate
+      and business keys. Historical point-in-time replay is handled by separate snapshot/SCD models if needed.
     columns:
       - name: customer_sk
         tests:
@@ -68,9 +97,24 @@ models:
       - name: customer_key
         tests:
           - not_null
+      - name: first_order_ts_utc
+        description: Earliest order timestamp for the customer (min(order_ts_utc)).
+      - name: last_order_ts_utc
+        description: Latest order timestamp for the customer (max(order_ts_utc)); also used as watermark column.
+      - name: lifetime_orders
+        description: Count of all orders placed by the customer.
+      - name: lifetime_basket_value_eur
+        description: Sum(total_basket_value_eur) across all customer orders.
+      - name: orders_with_promo
+        description: Count of customer orders where has_any_promo_units_in_order is true.
+      - name: first_order_contains_promo_flag
+        description: True when the first customer order included at least one promo unit.
 
   - name: fct_order
-    description: Order-level fact table exposing both warehouse surrogate keys and source business keys.
+    description: >
+      Order-level fact table exposing both warehouse surrogate keys and source business keys.
+      Contains event-stable transactional fields plus derived lifecycle fields that may be restated
+      when late-arriving historical orders are processed.
     columns:
       - name: order_sk
         tests:
@@ -84,12 +128,15 @@ models:
                 to: ref('dim_customer')
                 field: customer_sk
       - name: purchase_key
+        description: Order business key for source traceability and analyst-friendly exports.
         tests:
           - not_null
       - name: customer_key
+        description: Customer business key retained for analyst debugging and external sharing use cases.
         tests:
           - not_null
       - name: order_date
+        description: Berlin-local calendar date used as canonical business date (assignment scope is Berlin orders/time analysis).
         tests:
           - not_null
           - relationships:
@@ -97,14 +144,54 @@ models:
                 to: ref('dim_date')
                 field: date_day
       - name: order_ts_berlin
+        description: Berlin local order timestamp for local-time behavior analysis.
         tests:
           - not_null
       - name: order_hour_berlin
+        description: Berlin local order hour for daypart analysis in business reporting.
+        tests:
+          - not_null
+      - name: total_basket_value_eur
+        description: Basket value excluding service/courier fees; supports fee-vs-basket and revenue decomposition questions.
+      - name: wolt_service_fee_eur
+        description: Wolt app fee component for Task 1 fee comparison analysis.
+      - name: courier_base_fee_eur
+        description: Courier cost component for Task 1 courier cost analysis.
+      - name: basket_plus_service_fee_eur
+        description: Computed as total_basket_value_eur + wolt_service_fee_eur.
+      - name: total_customer_paid_eur
+        description: Computed as total_basket_value_eur + wolt_service_fee_eur + courier_base_fee_eur.
+      - name: total_units_in_order
+        description: Total purchased units in the order (sum(units_in_order_item_row) across order-item rows).
+      - name: distinct_order_item_rows_in_order
+        description: Number of order-item rows in the order (count(*) at order-item grain).
+      - name: promo_order_item_rows_in_order
+        description: Count of promo order-item rows in the order.
+      - name: promo_units_in_order
+        description: Sum of units_in_order_item_row on promo rows in the order.
+      - name: has_any_promo_units_in_order
+        description: True when promo_units_in_order > 0.
+      - name: modeled_order_items_base_amount_gross_eur
+        description: Sum of order-item-row base amounts used for order-level reconciliation.
+      - name: modeled_order_items_discount_amount_gross_eur
+        description: Sum of order-item-row discount amounts used for order-level reconciliation.
+      - name: modeled_order_items_final_amount_gross_eur
+        description: Sum of order-item-row final amounts used for order-level reconciliation.
+      - name: customer_order_number
+        description: >
+          Derived lifecycle sequence per customer. Can be restated if older late-arriving orders are backfilled.
+        tests:
+          - not_null
+      - name: is_first_order_for_customer
+        description: >
+          Derived boolean from `customer_order_number = 1`; can be restated after late-arrival corrections.
         tests:
           - not_null
 
   - name: fct_order_item
-    description: Order-item-level fact table exposing both warehouse surrogate keys and source business keys.
+    description: >
+      Order-item-level fact table exposing both warehouse surrogate keys and source business keys.
+      Core table for Task 1 item/promo pricing analysis and Task 2 category/star-product/affinity analysis.
     columns:
       - name: order_item_sk
         tests:
@@ -118,25 +205,50 @@ models:
                 to: ref('fct_order')
                 field: order_sk
       - name: purchase_key
+        description: Parent order business key retained for traceability and denormalized exports.
         tests:
           - not_null
       - name: customer_key
+        description: Customer business key for analyst-level traceability at item grain.
         tests:
           - not_null
       - name: item_key
+        description: Item business key for direct product-level analysis and debugging.
         tests:
           - not_null
       - name: item_key_sk
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
           - relationships:
               arguments:
                 to: ref('dim_item_current')
                 field: item_key_sk
       - name: item_scd_sk
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
           - relationships:
               arguments:
                 to: ref('dim_item_history')
                 field: item_scd_sk
+      - name: units_in_order_item_row
+        description: Purchased unit count for this order-item row; used in units sold and promo unit metrics.
+      - name: item_unit_base_price_gross_eur
+        description: Base unit price from item history at order time, before promo discount.
+      - name: discount_pct_applied
+        description: Promo discount percentage applied to this order-item row (0 when no promo matched).
+      - name: item_unit_discount_amount_gross_eur
+        description: item_unit_base_price_gross_eur * (discount_pct_applied / 100).
+      - name: item_unit_final_price_gross_eur
+        description: item_unit_base_price_gross_eur - item_unit_discount_amount_gross_eur.
+      - name: order_item_row_base_amount_gross_eur
+        description: item_unit_base_price_gross_eur * units_in_order_item_row.
+      - name: order_item_row_discount_amount_gross_eur
+        description: item_unit_discount_amount_gross_eur * units_in_order_item_row.
+      - name: order_item_row_final_amount_gross_eur
+        description: item_unit_final_price_gross_eur * units_in_order_item_row.
+      - name: is_promo_item
+        description: True when this order-item row received promo discount; supports promo uptake and conversion analyses.

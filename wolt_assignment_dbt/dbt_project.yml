@@ -27,9 +27,11 @@ vars:
   dev_sample_start_date: "2023-11-01"
   dev_sample_end_date: "2024-02-01"
   incremental_lookback_days: 7
+  enable_incremental_lookback_window: false
   enable_watermark_checks: true
   watermark_table_name: "_elt_watermarks"
   run_metadata_table_name: "_run_metadata"
+  system_schema_suffix: "sys"
   publish_tag: "scheduled"
   pair_affinity_min_orders_together: 5
   dim_date_start_date: "2019-01-01"
@@ -46,10 +48,17 @@ models:
   wolt_assignment_dbt:
     staging:
       +materialized: view
+      +schema: stg
     intermediate:
       +materialized: view
+      +schema: int
     marts:
       core:
         +materialized: table
+        +schema: core
       reporting:
         +materialized: table
+        +schema: rpt
+      audit:
+        +materialized: table
+        +schema: audit

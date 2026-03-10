@@ -5,17 +5,19 @@
         unique_key='log_item_id',
         on_schema_change='sync_all_columns',
         pre_hook=[ensure_watermark_table()] if var('enable_watermark_checks', true) else [],
-        post_hook=(
-            [upsert_model_watermark('int_wolt_item_logs_curated', 'time_log_created_utc'), backfill_last_modified_from_log_date()]
-            if var('enable_watermark_checks', true)
-            else [backfill_last_modified_from_log_date()]
-        ),
+        post_hook=[
+            upsert_model_watermark(
+                'int_wolt_item_logs_curated',
+                'time_log_created_utc',
+                '`' ~ target.database ~ '`.`' ~ target.schema ~ '_int`.`int_wolt_item_logs_curated`'
+            )
+        ] if var('enable_watermark_checks', true) else [],
         partition_by={
             'field': 'time_log_created_utc',
             'data_type': 'timestamp',
             'granularity': 'day'
         },
-        cluster_by=['item_key', 'log_item_id']
+        cluster_by=['item_key']
     )
 }}
 
@@ -41,20 +43,7 @@ with filtered as (
     {{ dev_date_window('time_log_created_utc', 'timestamp') }}
     {% if is_incremental() %}
         and time_log_created_utc >= (
-            timestamp_sub(
-                {% if var('enable_watermark_checks', true) %}
-                    {{ watermark_lookup_expr('int_wolt_item_logs_curated') }}
-                {% else %}
-                    (
-                        select coalesce(
-                            max(time_log_created_utc),
-                            timestamp('1900-01-01 00:00:00+00')
-                        )
-                        from {{ this }}
-                    )
-                {% endif %},
-                interval {{ var('incremental_lookback_days', 7) }} day
-            )
+            {{ incremental_cutoff_expr('int_wolt_item_logs_curated', 'time_log_created_utc') }}
         )
     {% endif %}
 ),
@@ -76,25 +65,25 @@ deduped_best_record as (
             payload_raw desc
     ) = 1
 ),
-with_merge_status as (
-    select
-        s.*,
-        {% if is_incremental() %}
+resolved_item_timestamp_conflicts as (
+    -- Conflict resolution for same item + same effective log timestamp across different log_item_id values:
+    -- 1) Prefer rows with positive non-null price (defensive; price filter is applied again later).
+    -- 2) If tied, prefer the latest source-created timestamp when available.
+    -- 3) If still tied, use log_item_id then payload_raw as deterministic fallback.
+    -- Result: exactly one trusted row per (item_key, time_log_created_utc).
+    select *
+    from deduped_best_record
+    qualify row_number() over (
+        partition by item_key, time_log_created_utc
+        order by
             case
-                when t.log_item_id is null then s.time_log_created_utc
-                else current_timestamp()
-            end as last_modified_utc
-        {% else %}
-            s.time_log_created_utc as last_modified_utc
-        {% endif %}
-    from deduped_best_record as s
-    {% if is_incremental() %}
-        left join (
-            select log_item_id
-            from {{ this }}
-        ) as t
-            on s.log_item_id = t.log_item_id
-    {% endif %}
+                when product_base_price_gross_eur is not null and product_base_price_gross_eur > 0 then 1
+                else 0
+            end desc,
+            time_item_created_in_source_utc desc nulls last,
+            log_item_id desc,
+            payload_raw desc
+    ) = 1
 )
 -- Final business-quality guardrail:
 -- keep only rows with positive, non-null product base price.
@@ -112,9 +101,8 @@ select
     product_base_price_gross_eur,
     vat_rate_pct,
     time_item_created_in_source_utc,
-    last_modified_utc,
     payload_json,
     payload_raw
-from with_merge_status
+from resolved_item_timestamp_conflicts
 where product_base_price_gross_eur is not null
     and product_base_price_gross_eur > 0
