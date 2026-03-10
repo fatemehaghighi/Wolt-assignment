@@ -122,7 +122,8 @@ Dagster orchestration is configured in:
 
 Included jobs:
 
-- `wolt_daily_pipeline_job`: validate env -> ingest raw -> dbt build (dev) -> export task outputs
+- `wolt_daily_dev_pipeline_job`: validate env -> ingest raw -> dbt build (dev) -> export task outputs
+- `wolt_daily_prod_pipeline_job`: dbt build (prod), triggered only after successful dev run
 - `wolt_weekly_full_refresh_job`: same flow with weekly full-refresh on dev
 
 Included schedules:
@@ -143,6 +144,8 @@ Trigger one run from CLI:
 make dagster-materialize-now
 ```
 
+The daily dev-to-prod gate is handled by sensor `trigger_prod_after_dev_success`.
+
 Run daily automatically on macOS (without opening project/IDE):
 
 ```bash
@@ -161,6 +164,24 @@ Important operational note:
 - No need to keep VS Code/project window open.
 - Machine must be powered on at schedule time.
 - Internet is still required because pipeline runs against BigQuery/GCS.
+
+## Optional: Open-Source BI (Lightdash)
+
+Local Lightdash setup is included in `bi/lightdash/`.
+
+```bash
+make lightdash-up
+```
+
+Open http://localhost:8080 and follow:
+
+- [bi/lightdash/LIGHTDASH_SETUP.md](bi/lightdash/LIGHTDASH_SETUP.md)
+
+Stop it:
+
+```bash
+make lightdash-down
+```
 
 ## More Details
 

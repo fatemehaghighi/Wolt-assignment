@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: lightdash_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PGUSER:-lightdash}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-lightdash}
+      POSTGRES_DB: ${PGDATABASE:-lightdash}
+    volumes:
+      - lightdash_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-lightdash} -d ${PGDATABASE:-lightdash}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  lightdash:
+    image: lightdash/lightdash:latest
+    container_name: lightdash_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${PGUSER:-lightdash}
+      PGPASSWORD: ${PGPASSWORD:-lightdash}
+      PGDATABASE: ${PGDATABASE:-lightdash}
+      LIGHTDASH_SECRET: ${LIGHTDASH_SECRET:-replace_me}
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      SITE_URL: ${SITE_URL:-http://localhost:8080}
+
+volumes:
+  lightdash_postgres_data:

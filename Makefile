@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help setup-env validate-env upload-raw load-raw ingest-raw dbt-debug-dev dbt-debug-prod dbt-run-dev dbt-test-dev dbt-build-dev dbt-run-prod dbt-test-prod dbt-backfill-item-scd2-dev dbt-backfill-item-scd2-dev-full dbt-backfill-orders-dev dbt-corrective-publish-dev export-task1 export-task2 dagster-dev dagster-materialize-now dagster-install-daily dagster-uninstall-daily build-presentation package-submission
+.PHONY: help setup-env validate-env upload-raw load-raw ingest-raw dbt-debug-dev dbt-debug-prod dbt-run-dev dbt-test-dev dbt-build-dev dbt-run-prod dbt-test-prod dbt-backfill-item-scd2-dev dbt-backfill-item-scd2-dev-full dbt-backfill-orders-dev dbt-corrective-publish-dev export-task1 export-task2 dagster-dev dagster-materialize-now dagster-install-daily dagster-uninstall-daily lightdash-up lightdash-down build-presentation package-submission
 
 BACKFILL_DAYS ?= 35
 PUBLISH_TAG ?= corrective
@@ -29,6 +29,8 @@ help:
 	@echo "  dagster-materialize-now  Trigger the daily Dagster job once from CLI"
 	@echo "  dagster-install-daily    Install macOS LaunchAgent to run Dagster daily job at 06:00"
 	@echo "  dagster-uninstall-daily  Remove macOS LaunchAgent daily schedule"
+	@echo "  lightdash-up    Start local Lightdash (open-source BI) with Docker Compose"
+	@echo "  lightdash-down  Stop local Lightdash containers"
 	@echo "  build-presentation  Build presentation/wolt_assignment.pdf"
 	@echo "  package-submission  Build exports + presentation artifacts"
 
@@ -97,6 +99,13 @@ dagster-install-daily:
 
 dagster-uninstall-daily:
 	@./scripts/uninstall_dagster_launchagent.sh
+
+lightdash-up:
+	@cd bi/lightdash && test -f .env || cp .env.example .env
+	@cd bi/lightdash && docker compose up -d
+
+lightdash-down:
+	@cd bi/lightdash && docker compose down
 
 build-presentation:
 	@mkdir -p presentation

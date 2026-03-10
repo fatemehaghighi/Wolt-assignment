@@ -34,3 +34,8 @@ dbt_packages/
 .DS_Store
 .vscode/
 .idea/
+
+# Lightdash local secrets
+bi/lightdash/.env
+bi/lightdash/secrets/*
+!bi/lightdash/secrets/.gitkeep
