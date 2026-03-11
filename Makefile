@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help setup-env validate-env upload-raw load-raw ingest-raw dbt-debug-dev dbt-debug-prod dbt-run-dev dbt-test-dev dbt-build-dev dbt-run-prod dbt-test-prod dbt-backfill-item-scd2-dev dbt-backfill-item-scd2-dev-full dbt-backfill-orders-dev dbt-corrective-publish-dev export-task1 export-task2 dagster-dev dagster-materialize-now dagster-install-daily dagster-uninstall-daily lightdash-up lightdash-down build-presentation package-submission
+.PHONY: help setup-env validate-env upload-raw load-raw ingest-raw dbt-debug-dev dbt-debug-prod dbt-run-dev dbt-test-dev dbt-build-dev dbt-run-prod dbt-test-prod dbt-backfill-item-scd2-dev dbt-backfill-item-scd2-dev-full dbt-backfill-orders-dev dbt-corrective-publish-dev export-task1 export-task2 dagster-dev dagster-materialize-now dagster-install-daily dagster-uninstall-daily lightdash-up lightdash-down lightdash-connect lightdash-connect-semantic lightdash-task1 lightdash-task2 lightdash-dashboards build-presentation package-submission
 
 BACKFILL_DAYS ?= 35
 PUBLISH_TAG ?= corrective
@@ -31,6 +31,11 @@ help:
 	@echo "  dagster-uninstall-daily  Remove macOS LaunchAgent daily schedule"
 	@echo "  lightdash-up    Start local Lightdash (open-source BI) with Docker Compose"
 	@echo "  lightdash-down  Stop local Lightdash containers"
+	@echo "  lightdash-connect  Create/reuse Lightdash project connected to BigQuery dev tables"
+	@echo "  lightdash-connect-semantic  Create/reuse manifest-backed semantic Lightdash project"
+	@echo "  lightdash-task1  Create/reuse Task 1 dashboard in Lightdash"
+	@echo "  lightdash-task2  Create/reuse Task 2 SQL charts and dashboard in Lightdash"
+	@echo "  lightdash-dashboards  Build both Task 1 and Task 2 Lightdash dashboards"
 	@echo "  build-presentation  Build presentation/wolt_assignment.pdf"
 	@echo "  package-submission  Build exports + presentation artifacts"
 
@@ -101,11 +106,28 @@ dagster-uninstall-daily:
 	@./scripts/uninstall_dagster_launchagent.sh
 
 lightdash-up:
+	@command -v docker >/dev/null 2>&1 || (echo "Docker CLI not found. Install Docker Desktop (or Colima+docker) and retry." && exit 127)
+	@docker info >/dev/null 2>&1 || (echo "Docker daemon is not running. Start Docker Desktop (or run: colima start)." && exit 1)
 	@cd bi/lightdash && test -f .env || cp .env.example .env
 	@cd bi/lightdash && docker compose up -d
 
 lightdash-down:
+	@command -v docker >/dev/null 2>&1 || (echo "Docker CLI not found." && exit 127)
 	@cd bi/lightdash && docker compose down
+
+lightdash-connect:
+	@./scripts/lightdash_connect_bigquery.sh
+
+lightdash-connect-semantic:
+	@./scripts/lightdash_connect_semantic_project.sh
+
+lightdash-task1:
+	@./scripts/lightdash_create_task1_dashboard.sh
+
+lightdash-task2:
+	@./scripts/lightdash_create_task2_dashboard.sh
+
+lightdash-dashboards: lightdash-connect-semantic lightdash-task1 lightdash-task2
 
 build-presentation:
 	@mkdir -p presentation

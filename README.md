@@ -177,11 +177,35 @@ Open http://localhost:8080 and follow:
 
 - [bi/lightdash/LIGHTDASH_SETUP.md](bi/lightdash/LIGHTDASH_SETUP.md)
 
+Auto-connect Lightdash to BigQuery dev project after first login:
+
+```bash
+make lightdash-connect
+```
+
 Stop it:
 
 ```bash
 make lightdash-down
 ```
+
+Lightdash dashboard behavior in this repo:
+- `make lightdash-task1` and `make lightdash-task2` update/create chart assets and reuse existing dashboards.
+- Manual tile placement/resize done in Lightdash UI is preserved by default.
+- To force full dashboard reset from scripts, run with:
+  - `LIGHTDASH_RECREATE_DASHBOARD=1 make lightdash-task1`
+  - `LIGHTDASH_RECREATE_DASHBOARD=1 make lightdash-task2`
+- Layout defaults can be controlled when creating a dashboard from script:
+  - `LIGHTDASH_CHART_TILE_WIDTH` (default `24`, total grid width is `48`)
+  - `LIGHTDASH_ROW_TILE_HEIGHT` (default `10`)
+
+Task 2 dashboard coverage:
+- Q1: Category monthly growth
+- Q1: Star products by category
+- Q2: Declining categories MoM
+- Q3: Top item pair affinity
+- Q4: Category consumption by Berlin-local daypart
+- Q5: First-order promo acquisition
 
 ## More Details
 
