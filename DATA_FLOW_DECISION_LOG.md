@@ -109,6 +109,12 @@ select *
 from analytics_dev_audit.rpt_pipeline_row_flow_audit_summary;
 ```
 
+`rpt_pipeline_row_flow_audit_summary` also includes:
+- `overall_pipeline_flow_state`
+- `overall_pipeline_flow_state_reason`
+- `review_required_step_objects` (array)
+- `attention_required_step_objects` (array)
+
 ### 3) Item curation reasons (row-level)
 
 ```sql
@@ -133,6 +139,22 @@ This summary now includes downstream item-history surfaces too:
 - `dim_item_history_row_count`
 - `dim_item_current_row_count`
 - and their distinct `item_key` counts
+
+It also includes quick triage fields:
+- `overall_curation_state`
+- `overall_curation_state_reason`
+- `problematic_log_item_ids` (array)
+- `problematic_item_keys` (array)
+
+Other summaries now follow the same pattern:
+- `rpt_order_item_item_match_audit_summary`
+  - `overall_match_state`, `overall_match_state_reason`, problematic SK/key arrays
+- `rpt_promo_item_coverage_audit_summary`
+  - `overall_coverage_state`, `overall_coverage_state_reason`, missing-mapping arrays
+- `rpt_business_promo_discount_anomaly_audit_summary`
+  - `overall_promo_anomaly_state`, `overall_promo_anomaly_state_reason`, critical/warning promo arrays
+- `rpt_business_item_price_anomaly_audit_summary`
+  - `overall_item_price_anomaly_state`, `overall_item_price_anomaly_state_reason`, critical/warning log-id arrays
 
 ---
 

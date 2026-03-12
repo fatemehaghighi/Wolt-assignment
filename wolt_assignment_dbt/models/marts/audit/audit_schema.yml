@@ -129,6 +129,12 @@ models:
       - name: affected_item_key_count
         tests:
           - not_null
+      - name: overall_match_state
+        tests:
+          - not_null
+      - name: overall_match_state_reason
+        tests:
+          - not_null
 
   - name: rpt_pipeline_row_flow_audit
     description: >
@@ -177,6 +183,12 @@ models:
       - name: baseline_reference_steps
         tests:
           - not_null
+      - name: overall_pipeline_flow_state
+        tests:
+          - not_null
+      - name: overall_pipeline_flow_state_reason
+        tests:
+          - not_null
 
   - name: rpt_promo_item_coverage_audit
     description: >
@@ -207,6 +219,12 @@ models:
         tests:
           - not_null
       - name: promo_rows_missing_item_dim_count
+        tests:
+          - not_null
+      - name: overall_coverage_state
+        tests:
+          - not_null
+      - name: overall_coverage_state_reason
         tests:
           - not_null
 
@@ -245,6 +263,12 @@ models:
       - name: critical_rows
         tests:
           - not_null
+      - name: overall_promo_anomaly_state
+        tests:
+          - not_null
+      - name: overall_promo_anomaly_state_reason
+        tests:
+          - not_null
 
   - name: rpt_business_item_price_anomaly_audit
     description: >
@@ -278,5 +302,11 @@ models:
         tests:
           - not_null
       - name: critical_rows
+        tests:
+          - not_null
+      - name: overall_item_price_anomaly_state
+        tests:
+          - not_null
+      - name: overall_item_price_anomaly_state_reason
         tests:
           - not_null
