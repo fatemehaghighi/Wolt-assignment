@@ -16,8 +16,27 @@ stg_totals as (
 curated_totals as (
     select
         count(*) as curated_row_count,
-        count(distinct log_item_id) as curated_distinct_log_item_id_count
+        count(distinct log_item_id) as curated_distinct_log_item_id_count,
+        count(distinct item_key) as curated_distinct_item_key_count
     from {{ ref('int_wolt_item_logs_curated') }}
+),
+scd2_totals as (
+    select
+        count(*) as int_item_scd2_row_count,
+        count(distinct item_key) as int_item_scd2_distinct_item_key_count
+    from {{ ref('int_wolt_item_scd2') }}
+),
+history_totals as (
+    select
+        count(*) as dim_item_history_row_count,
+        count(distinct item_key) as dim_item_history_distinct_item_key_count
+    from {{ ref('dim_item_history') }}
+),
+current_totals as (
+    select
+        count(*) as dim_item_current_row_count,
+        count(distinct item_key) as dim_item_current_distinct_item_key_count
+    from {{ ref('dim_item_current') }}
 ),
 audit_counts as (
     select
@@ -40,6 +59,13 @@ select
     st.stg_distinct_log_item_id_count,
     ct.curated_row_count,
     ct.curated_distinct_log_item_id_count,
+    ct.curated_distinct_item_key_count,
+    s2.int_item_scd2_row_count,
+    s2.int_item_scd2_distinct_item_key_count,
+    ht.dim_item_history_row_count,
+    ht.dim_item_history_distinct_item_key_count,
+    cu.dim_item_current_row_count,
+    cu.dim_item_current_distinct_item_key_count,
     ac.audit_log_item_id_count,
     ac.expected_in_curated_count,
     ac.actually_in_curated_count,
@@ -53,4 +79,7 @@ select
 from raw_totals as rt
 cross join stg_totals as st
 cross join curated_totals as ct
+cross join scd2_totals as s2
+cross join history_totals as ht
+cross join current_totals as cu
 cross join audit_counts as ac

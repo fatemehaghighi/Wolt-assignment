@@ -128,6 +128,12 @@ select *
 from analytics_dev_audit.rpt_item_logs_curation_audit_summary;
 ```
 
+This summary now includes downstream item-history surfaces too:
+- `int_item_scd2_row_count`
+- `dim_item_history_row_count`
+- `dim_item_current_row_count`
+- and their distinct `item_key` counts
+
 ---
 
 ## Contracts/Tests Protecting Future Data

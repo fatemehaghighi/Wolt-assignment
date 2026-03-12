@@ -37,6 +37,27 @@ models:
       - name: curated_row_count
         tests:
           - not_null
+      - name: curated_distinct_item_key_count
+        tests:
+          - not_null
+      - name: int_item_scd2_row_count
+        tests:
+          - not_null
+      - name: int_item_scd2_distinct_item_key_count
+        tests:
+          - not_null
+      - name: dim_item_history_row_count
+        tests:
+          - not_null
+      - name: dim_item_history_distinct_item_key_count
+        tests:
+          - not_null
+      - name: dim_item_current_row_count
+        tests:
+          - not_null
+      - name: dim_item_current_distinct_item_key_count
+        tests:
+          - not_null
       - name: expected_in_curated_count
         tests:
           - not_null
