@@ -173,3 +173,74 @@ models:
       - name: promo_rows_missing_item_dim_count
         tests:
           - not_null
+
+  - name: rpt_business_promo_discount_anomaly_audit
+    description: >
+      Business anomaly audit for promo discounts. Flags critical and warning-level
+      discount anomalies using both rule-based and distribution-based checks.
+      Designed for non-blocking monitoring (warn, not fail, in tests).
+    columns:
+      - name: promo_sk
+        tests:
+          - not_null
+      - name: item_key
+        tests:
+          - not_null
+      - name: discount_pct
+        tests:
+          - not_null
+      - name: anomaly_severity
+        tests:
+          - not_null
+      - name: anomaly_reason
+        tests:
+          - not_null
+
+  - name: rpt_business_promo_discount_anomaly_audit_summary
+    description: >
+      One-row summary of promo discount anomaly severities and reason buckets.
+    columns:
+      - name: promo_rows_checked
+        tests:
+          - not_null
+      - name: warning_rows
+        tests:
+          - not_null
+      - name: critical_rows
+        tests:
+          - not_null
+
+  - name: rpt_business_item_price_anomaly_audit
+    description: >
+      Business anomaly audit for item prices on curated item-log history.
+      Flags suspicious jumps and statistical outliers without blocking model builds.
+    columns:
+      - name: log_item_id
+        tests:
+          - not_null
+      - name: item_key
+        tests:
+          - not_null
+      - name: item_price_gross_eur
+        tests:
+          - not_null
+      - name: anomaly_severity
+        tests:
+          - not_null
+      - name: anomaly_reason
+        tests:
+          - not_null
+
+  - name: rpt_business_item_price_anomaly_audit_summary
+    description: >
+      One-row summary of item price anomaly severities and reason buckets.
+    columns:
+      - name: item_log_rows_checked
+        tests:
+          - not_null
+      - name: warning_rows
+        tests:
+          - not_null
+      - name: critical_rows
+        tests:
+          - not_null

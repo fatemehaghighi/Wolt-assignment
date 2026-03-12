@@ -226,6 +226,23 @@ Implementation note:
 - SCD2 is not required unless promo attributes can change without clear new-version rows from source (or you need separate warehouse version-history semantics).
 - If that future requirement appears, introduce a dedicated promo SCD2 model/versioning layer rather than changing current promo key logic in place.
 
+### Business Anomaly Controls (Non-Blocking)
+- Clarification:
+  - Existing promo validity checks (`assert_valid_promo_windows.sql`) are data-contract tests.
+  - They do not physically filter rows out of `dim_promo`; they surface violations.
+- Added business-side monitoring models:
+  - `rpt_business_promo_discount_anomaly_audit`
+  - `rpt_business_promo_discount_anomaly_audit_summary`
+  - `rpt_business_item_price_anomaly_audit`
+  - `rpt_business_item_price_anomaly_audit_summary`
+- Severity policy:
+  - `critical`: impossible/very suspicious values (for example promo discount outside `[0,100]`, discount `>=90%`, non-positive item price, extreme price jump).
+  - `warning`: statistically unusual but possible values (IQR-based outliers, large but not extreme jumps).
+- Build behavior:
+  - `assert_no_critical_business_promo_discount_anomalies.sql` is `severity='warn'`.
+  - `assert_no_critical_business_item_price_anomalies.sql` is `severity='warn'`.
+  - This keeps pipeline availability (no hard stop) while still producing visible control signals.
+
 ## Physical Optimization (BigQuery)
 - Fact tables are partitioned and clustered for scan-cost and latency control at scale:
   - `fct_order`: partition by `order_date`, cluster by `order_sk`, `customer_sk`.

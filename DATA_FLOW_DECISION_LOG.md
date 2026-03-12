@@ -143,6 +143,16 @@ Cross-model consistency checks:
 - `assert_promo_items_exist_in_dim_item_current.sql`
 - `assert_order_reconciliation.sql`
 
+Business anomaly controls (non-blocking warnings):
+- `assert_no_critical_business_promo_discount_anomalies.sql`
+- `assert_no_critical_business_item_price_anomalies.sql`
+
+Related audit tables:
+- `rpt_business_promo_discount_anomaly_audit`
+- `rpt_business_promo_discount_anomaly_audit_summary`
+- `rpt_business_item_price_anomaly_audit`
+- `rpt_business_item_price_anomaly_audit_summary`
+
 ---
 
 ## How To Refresh This Evidence
