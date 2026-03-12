@@ -79,6 +79,21 @@ models:
       - name: error_unexpected_present_count
         tests:
           - not_null
+      - name: overall_curation_state
+        tests:
+          - not_null
+      - name: overall_curation_state_reason
+        tests:
+          - not_null
+      - name: problematic_log_item_id_count
+        tests:
+          - not_null
+      - name: problematic_item_key_count
+        tests:
+          - not_null
+      - name: expected_exclusion_log_item_id_count
+        tests:
+          - not_null
 
   - name: rpt_order_item_item_match_audit
     description: >
