@@ -26,13 +26,27 @@ with counts as (
         (select count(distinct item_key) from {{ source('raw', 'wolt_snack_store_item_logs') }}) as raw_item_log_distinct_item_key,
         (select count(*) from {{ ref('stg_wolt_item_logs') }}) as stg_item_log_rows,
         (select count(distinct log_item_id) from {{ ref('stg_wolt_item_logs') }}) as stg_item_log_distinct_log_item_id,
+        (select count(distinct item_key) from {{ ref('stg_wolt_item_logs') }}) as stg_item_log_distinct_item_key,
         (select countif(time_log_created_utc is null) from {{ ref('stg_wolt_item_logs') }}) as stg_item_log_null_event_time_rows,
         (select count(*) from {{ ref('int_wolt_item_logs_curated') }}) as int_item_log_curated_rows,
         (select count(distinct log_item_id) from {{ ref('int_wolt_item_logs_curated') }}) as int_item_log_curated_distinct_log_item_id,
+        (select count(distinct item_key) from {{ ref('int_wolt_item_logs_curated') }}) as int_item_log_curated_distinct_item_key,
         (select count(*) from {{ ref('int_wolt_item_scd2') }}) as int_item_scd2_rows,
+        (select count(distinct item_key) from {{ ref('int_wolt_item_scd2') }}) as int_item_scd2_distinct_item_key,
         (select count(*) from {{ ref('dim_item_history') }}) as dim_item_history_rows,
+        (select count(distinct item_key) from {{ ref('dim_item_history') }}) as dim_item_history_distinct_item_key,
         (select count(*) from {{ ref('dim_item_current') }}) as dim_item_current_rows,
+        (select count(distinct item_key) from {{ ref('dim_item_current') }}) as dim_item_current_distinct_item_key,
+        (select excluded_invalid_time_count from {{ ref('rpt_item_logs_curation_audit_summary') }}) as item_curation_excluded_invalid_time_count,
+        (select excluded_invalid_price_count from {{ ref('rpt_item_logs_curation_audit_summary') }}) as item_curation_excluded_invalid_price_count,
+        (select excluded_item_timestamp_conflict_count from {{ ref('rpt_item_logs_curation_audit_summary') }}) as item_curation_excluded_item_timestamp_conflict_count,
+
+        (select count(*) from {{ source('raw', 'wolt_snack_store_promos') }}) as raw_promo_rows,
+        (select count(distinct item_key) from {{ source('raw', 'wolt_snack_store_promos') }}) as raw_promo_distinct_item_key,
+        (select count(*) from {{ ref('stg_wolt_promos') }}) as stg_promo_rows,
+        (select count(distinct item_key) from {{ ref('stg_wolt_promos') }}) as stg_promo_distinct_item_key,
         (select count(*) from {{ ref('dim_promo') }}) as dim_promo_rows,
+        (select count(distinct item_key) from {{ ref('dim_promo') }}) as dim_promo_distinct_item_key,
         (select count(*) from {{ ref('dim_promo') }} p left join {{ ref('dim_item_current') }} i on p.item_key_sk = i.item_key_sk where i.item_key_sk is null) as dim_promo_missing_item_rows
 ),
 flow as (
@@ -195,7 +209,11 @@ flow as (
         c.stg_item_log_rows - c.raw_item_log_rows,
         'Expected near-same row count after parsing/typing.',
         case when c.stg_item_log_rows = c.raw_item_log_rows then 'matches_expectation' else 'review_required' end,
-        concat('stg_null_event_time_rows=', cast(c.stg_item_log_null_event_time_rows as string))
+        concat(
+            'stg_null_event_time_rows=', cast(c.stg_item_log_null_event_time_rows as string),
+            '; distinct_item_keys_raw=', cast(c.raw_item_log_distinct_item_key as string),
+            '; distinct_item_keys_stg=', cast(c.stg_item_log_distinct_item_key as string)
+        )
     from counts c
 
     union all
@@ -211,7 +229,13 @@ flow as (
         c.int_item_log_curated_rows - c.stg_item_log_rows,
         'Expected fewer or equal rows after curation (invalid/conflicting rows removed).',
         case when c.int_item_log_curated_rows <= c.stg_item_log_rows then 'matches_expectation' else 'review_required' end,
-        concat('curation_removed_rows=', cast(c.stg_item_log_rows - c.int_item_log_curated_rows as string))
+        concat(
+            'curation_removed_rows=', cast(c.stg_item_log_rows - c.int_item_log_curated_rows as string),
+            '; distinct_item_keys_curated=', cast(c.int_item_log_curated_distinct_item_key as string),
+            '; excluded_invalid_time=', cast(c.item_curation_excluded_invalid_time_count as string),
+            '; excluded_invalid_price=', cast(c.item_curation_excluded_invalid_price_count as string),
+            '; excluded_item_timestamp_conflict=', cast(c.item_curation_excluded_item_timestamp_conflict_count as string)
+        )
     from counts c
 
     union all
@@ -227,7 +251,7 @@ flow as (
         cast(null as int64),
         'SCD2 versions derived from curated item logs.',
         'baseline_reference',
-        cast(null as string)
+        concat('distinct_item_keys_scd2=', cast(c.int_item_scd2_distinct_item_key as string))
     from counts c
 
     union all
@@ -243,7 +267,7 @@ flow as (
         c.dim_item_history_rows - c.int_item_scd2_rows,
         'Expected same row count as SCD2 source.',
         case when c.dim_item_history_rows = c.int_item_scd2_rows then 'matches_expectation' else 'review_required' end,
-        cast(null as string)
+        concat('distinct_item_keys_history=', cast(c.dim_item_history_distinct_item_key as string))
     from counts c
 
     union all
@@ -259,7 +283,10 @@ flow as (
         c.dim_item_current_rows - c.dim_item_history_rows,
         'Expected lower row count than history (one current row per item).',
         case when c.dim_item_current_rows <= c.dim_item_history_rows then 'matches_expectation' else 'review_required' end,
-        cast(null as string)
+        concat(
+            'distinct_item_keys_current=', cast(c.dim_item_current_distinct_item_key as string),
+            '; distinct_item_keys_raw=', cast(c.raw_item_log_distinct_item_key as string)
+        )
     from counts c
 
     union all
@@ -267,15 +294,50 @@ flow as (
         current_timestamp(),
         'promo_chain',
         1,
+        'raw.wolt_snack_store_promos',
+        'item_key + promo window',
+        c.raw_promo_rows,
+        c.raw_promo_distinct_item_key,
+        cast(null as int64),
+        cast(null as int64),
+        'Baseline raw promo rules.',
+        'baseline_reference',
+        cast(null as string)
+    from counts c
+
+    union all
+    select
+        current_timestamp(),
+        'promo_chain',
+        2,
+        'stg_wolt_promos',
+        'item_key + promo window',
+        c.stg_promo_rows,
+        c.stg_promo_distinct_item_key,
+        c.raw_promo_rows,
+        c.stg_promo_rows - c.raw_promo_rows,
+        'Expected near-same rows after typing/standardization.',
+        case when c.stg_promo_rows = c.raw_promo_rows then 'matches_expectation' else 'review_required' end,
+        cast(null as string)
+    from counts c
+
+    union all
+    select
+        current_timestamp(),
+        'promo_chain',
+        3,
         'dim_promo',
         'promo_sk',
         c.dim_promo_rows,
-        c.dim_promo_rows,
-        cast(null as int64),
-        cast(null as int64),
+        c.dim_promo_distinct_item_key,
+        c.stg_promo_rows,
+        c.dim_promo_rows - c.stg_promo_rows,
         'Promo rule rows; should mostly map to current item dimension.',
         case when c.dim_promo_missing_item_rows = 0 then 'matches_expectation' else 'attention_required' end,
-        concat('promo_rows_missing_item_dim=', cast(c.dim_promo_missing_item_rows as string))
+        concat(
+            'promo_rows_missing_item_dim=', cast(c.dim_promo_missing_item_rows as string),
+            '; distinct_item_keys_dim_promo=', cast(c.dim_promo_distinct_item_key as string)
+        )
     from counts c
 )
 select *

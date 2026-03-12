@@ -211,6 +211,7 @@ Task 2 dashboard coverage:
 
 - setup notes: [SETUP_LOG.md](SETUP_LOG.md)
 - logical validation report: [LOGICAL_VALIDATION_REPORT.md](LOGICAL_VALIDATION_REPORT.md)
+- data-flow decision log: [DATA_FLOW_DECISION_LOG.md](DATA_FLOW_DECISION_LOG.md)
 - logical validation SQL checks: [sql/logical_validation_checks.sql](sql/logical_validation_checks.sql)
 - decision flow and tradeoff log: [DECISION_FLOW.md](DECISION_FLOW.md)
 - modeling guide: [wolt_assignment_dbt/MODELING.md](wolt_assignment_dbt/MODELING.md)

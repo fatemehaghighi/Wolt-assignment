@@ -156,6 +156,7 @@ Why:
 
 Controls:
 - `LOGICAL_VALIDATION_REPORT.md`
+- `DATA_FLOW_DECISION_LOG.md`
 - `sql/logical_validation_checks.sql`
 - `marts/audit` models + consistency tests
 - Late-arrival item match monitoring:
