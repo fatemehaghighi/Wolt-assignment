@@ -16,7 +16,7 @@
 - Assumption applied in curated intermediate layer:
   - keep the duplicate row with positive non-null `product_base_price_gross_eur`,
   - filter out rows with null/non-positive prices as non-business-relevant noise.
-- This rule is implemented in `int_wolt_item_logs_curated.sql` and enforced by `assert_item_log_prices_positive_not_null.sql`.
+- This rule is implemented in `int_wolt_item_logs_curated_deduped.sql` and enforced by `assert_item_log_prices_positive_not_null.sql`.
 - Additional observation (needs further investigation):
   - In `stg_wolt_item_logs`, some rows have `brand_name` = `null`.
   - Current count from validation checks: `30` null-brand rows out of `648` staged rows (`~4.63%`), and `30` out of `471` curated rows.
@@ -93,10 +93,10 @@
   - `rpt_*_audit`: monitoring/quality visibility models.
 
 ## Incremental Strategy (Scale Readiness)
-- `int_wolt_item_logs_curated` and `int_wolt_purchase_logs_curated` are incremental `merge` models (BigQuery).
+- `int_wolt_item_logs_curated_deduped` and `int_wolt_purchase_logs_curated_filtered` are incremental `merge` models (BigQuery).
 - Keys:
-  - `int_wolt_item_logs_curated`: `log_item_id`
-  - `int_wolt_purchase_logs_curated`: `purchase_key`
+  - `int_wolt_item_logs_curated_deduped`: `log_item_id`
+  - `int_wolt_purchase_logs_curated_filtered`: `purchase_key`
 - Incremental filter:
   - process rows newer than `watermark_ts - incremental_lookback_days`.
   - watermark is read from a lightweight metadata table (`_elt_watermarks`) instead of scanning target tables for `max(event_timestamp)`.
@@ -293,8 +293,8 @@ When to simplify or clear cluster keys:
 Current tuning decisions applied:
 - `fct_order`: dropped low-cardinality `has_any_promo_units_in_order` from clustering; kept join/filter-first keys (`order_sk`, `customer_sk`).
 - `fct_order_item`: dropped low-cardinality `is_promo_item`; kept (`order_sk`, `item_key_sk`, `customer_sk`).
-- `int_wolt_purchase_logs_curated`: reordered clustering to (`purchase_key`, `customer_key`) to prioritize join-heavy `purchase_key`.
-- `int_wolt_item_logs_curated`: removed near-unique `log_item_id` from clustering; kept `item_key` for item-history access patterns.
+- `int_wolt_purchase_logs_curated_filtered`: reordered clustering to (`purchase_key`, `customer_key`) to prioritize join-heavy `purchase_key`.
+- `int_wolt_item_logs_curated_deduped`: removed near-unique `log_item_id` from clustering; kept `item_key` for item-history access patterns.
 - `dim_item_history`: removed redundant `item_key` (already represented by `item_key_sk`); kept (`item_key_sk`, `is_current`).
 - `dim_customer`, `dim_item_current`: simplified to single SK clustering to reduce unnecessary write overhead.
 
@@ -303,12 +303,12 @@ Monitoring SQL:
 
 ## Intermediate Layer Notes
 - `stg_wolt_order_items` is the single basket JSON expansion model in staging.
-- `int_wolt_order_items_priced` reuses `stg_wolt_order_items` and joins curated purchase/order attributes, instead of re-exploding basket JSON in intermediate.
-- `int_wolt_order_items_priced` joins `int_wolt_item_scd2` (intermediate-to-intermediate), not `dim_item_history` (mart/core), on purpose:
+- `int_wolt_order_items_with_item_price` reuses `stg_wolt_order_items` and joins curated purchase/order attributes, instead of re-exploding basket JSON in intermediate.
+- `int_wolt_order_items_with_item_price` joins `int_wolt_item_scd2` (intermediate-to-intermediate), not `dim_item_history` (mart/core), on purpose:
   - preserves layer boundaries (`intermediate` should not depend on downstream semantic marts),
   - avoids coupling intermediate business logic to presentation/serving models,
   - keeps historical pricing join semantics tied directly to the canonical SCD2 build step.
-- `int_wolt_order_items_priced` also keeps a `QUALIFY row_number()` guard after the SCD2 range join:
+- `int_wolt_order_items_with_item_price` also keeps a `QUALIFY row_number()` guard after the SCD2 range join:
   - primary protection is still in SCD2 itself (non-overlap/no-invalid-window tests),
   - `QUALIFY` is retained as a defensive fallback for unexpected operational edge cases,
   - objective is to prevent duplicate order-item rows if a temporary overlap slips through during incidents/backfills.
@@ -318,7 +318,7 @@ Monitoring SQL:
 
 ### If `int_wolt_item_scd2` View Becomes Expensive
 1. Confirm with job telemetry:
-   - compare `total_bytes_processed`, `slot_ms`, and runtime for `int_wolt_order_items_priced` over representative workloads.
+   - compare `total_bytes_processed`, `slot_ms`, and runtime for `int_wolt_order_items_with_item_price` over representative workloads.
 2. Materialize SCD2 physically:
    - switch `int_wolt_item_scd2` from view to table/incremental in BigQuery,
    - partition on `valid_from_utc` (day), cluster on `item_key`/`item_key_sk`.
@@ -330,31 +330,18 @@ Monitoring SQL:
    - keep the change only if measured scan and latency improvements are consistent.
 
 ## Reporting Models
-- `rpt_category_daily`
-- `rpt_item_pair_affinity`
+- `rpt_category_monthly`
+- `rpt_cross_sell_product_pairs`
 - `rpt_customer_promo_behavior`
-- Reporting models are published as daily snapshots (one version per `snapshot_date`).
-- Reporting model merge keys include `snapshot_date` + business grain:
-  - same-day reruns replace that day's snapshot rows,
-  - new-day runs append a new daily snapshot.
+- Reporting models are latest-state business tables (no snapshot_date column in final reporting outputs).
 - `rpt_customer_promo_behavior` is item-level for promo semantics:
   - `first_order_had_any_promo_units`
   - `first_order_had_only_promo_units`
   - promo/non-promo unit counts and values.
-- `rpt_item_pair_affinity` includes readable item names/categories and uses configurable threshold var:
-  - `pair_affinity_min_orders_together` (default `5`).
-- Pair labels are sourced from order-time fact context (`fct_order_item` by month), not current-state-only item dimension labels.
-- `rpt_category_daily` semantics:
-  - customer counts are category-attributed (one customer can appear in multiple categories on the same day),
-  - `avg_order_units_for_orders_with_category` is average full basket size for orders containing the category.
-  - `avg_selling_price_eur` is weighted ASP: `sum(order_item_rows_revenue_eur) / sum(units_sold)`.
-    - uses discount-included final paid amounts,
-    - intentionally not `avg(item_unit_final_price_gross_eur)` to avoid unweighted row bias.
-- Run metadata is written to `_run_metadata` for engineering traceability.
-  - reporting tables stay business-facing and expose only `snapshot_date` as snapshot version column.
-- Rationale:
-  - business can compare outputs across run dates,
-  - discrepancies can be traced back to a specific corrective/backfill publication run.
+- `rpt_category_monthly` semantics:
+  - computed directly at month grain from atomic facts (not from daily rollups),
+  - avoids `avg-of-avg` and `sum-of-daily-distinct` errors for monthly reporting.
+- `rpt_cross_sell_product_pairs` uses support/confidence/lift plus expected-vs-observed pair counts and actionability buckets.
 
 ## Metric Semantics (Order Enrichment)
 - `promo_order_item_rows_in_order` vs `promo_units_in_order` are intentionally different:

@@ -70,7 +70,7 @@ sid = subprocess.check_output(
 ).strip()
 
 if not sid:
-    raise SystemExit('No active Lightdash session found. Login at http://localhost:8080 first.')
+    raise SystemExit('No active Lightdash session found. Login at http://localhost:18080 first.')
 
 signature = base64.b64encode(
     hmac.new(secret.encode(), sid.encode(), hashlib.sha256).digest()
@@ -80,7 +80,7 @@ cookie = urllib.parse.quote(f's:{sid}.{signature}', safe='')
 session = requests.Session()
 session.headers.update({'Cookie': f'connect.sid={cookie}', 'Content-Type': 'application/json'})
 
-base_url = 'http://localhost:8080'
+base_url = 'http://localhost:18080'
 project_name = env.get('LIGHTDASH_PROJECT_NAME', 'Wolt Assignment Dev Semantic')
 project_dataset = f"{env['DBT_BQ_DEV_DATASET']}_core"
 
@@ -91,10 +91,31 @@ existing = next((p for p in projects if p.get('name') == project_name), None)
 
 if existing:
     project_uuid = existing['projectUuid']
-    # Refresh manifest + explores to keep semantic layer in sync with dbt.
+    project_resp = session.get(f'{base_url}/api/v1/projects/{project_uuid}', timeout=60)
+    project_resp.raise_for_status()
+    current_project = project_resp.json()['results']
+    # Lightdash expects a near-full project payload on PATCH.
+    update_payload = {
+        'name': current_project['name'],
+        'type': current_project.get('type', 'DEFAULT'),
+        'dbtConnection': {
+            'type': 'manifest',
+            'manifest': manifest,
+            'hideRefreshButton': False,
+        },
+        'dbtVersion': 'v1.11',
+        'warehouseConnection': current_project['warehouseConnection'],
+    }
+    update = session.patch(
+        f'{base_url}/api/v1/projects/{project_uuid}',
+        data=json.dumps(update_payload),
+        timeout=120,
+    )
+    update.raise_for_status()
+    # Refresh explores after manifest update.
     refresh = session.post(f'{base_url}/api/v1/projects/{project_uuid}/refresh', timeout=120)
     refresh.raise_for_status()
-    action = 'Reused + refreshed'
+    action = 'Reused + updated manifest + refreshed'
 else:
     keyfile = json.loads(Path(env['DBT_BQ_DEV_KEYFILE']).read_text(encoding='utf-8'))
     payload = {
@@ -128,5 +149,5 @@ else:
     action = 'Created'
 
 print(f'{action} semantic project: {project_name} ({project_uuid})')
-print(f'Open: http://localhost:8080/projects/{project_uuid}')
+print(f'Open: http://localhost:18080/projects/{project_uuid}')
 PY

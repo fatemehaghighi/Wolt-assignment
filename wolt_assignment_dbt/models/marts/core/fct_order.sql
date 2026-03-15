@@ -45,14 +45,14 @@ select
     promo_order_item_rows_in_order,
     promo_units_in_order,
     has_any_promo_units_in_order,
-    modeled_order_items_base_amount_gross_eur,
-    modeled_order_items_discount_amount_gross_eur,
-    modeled_order_items_final_amount_gross_eur,
+    derived_order_items_base_amount_gross_eur,
+    derived_order_items_discount_amount_gross_eur,
+    derived_order_items_final_amount_gross_eur,
     -- Per-customer order sequence by order_ts_utc (ties by purchase_key).
     customer_order_number,
     -- Task 1/2 customer lifecycle signal (repeat vs first-time behavior).
     is_first_order_for_customer
-from {{ ref('int_wolt_orders_enriched') }}
+from {{ ref('int_wolt_orders_with_item_rollups') }}
 {% if is_incremental() %}
 where time_order_received_utc >= (
     {{ incremental_cutoff_expr('fct_order', 'order_ts_utc') }}

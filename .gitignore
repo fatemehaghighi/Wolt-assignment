@@ -39,3 +39,6 @@ dbt_packages/
 bi/lightdash/.env
 bi/lightdash/secrets/*
 !bi/lightdash/secrets/.gitkeep
+node_modules
+
+.bruin.yml

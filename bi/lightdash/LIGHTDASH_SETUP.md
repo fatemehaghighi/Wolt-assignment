@@ -37,9 +37,9 @@ This repo now uses a manifest-backed Lightdash project for semantic Explore usag
 
 - `fct_order`
 - `fct_order_item`
-- `rpt_category_daily`
+- `rpt_category_monthly_kpi_long`
 - `rpt_customer_promo_behavior`
-- `rpt_item_pair_affinity`
+- `rpt_cross_sell_product_pairs`
 
 These already map to assignment questions and business dashboards.
 

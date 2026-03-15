@@ -50,7 +50,7 @@ Additional safeguards for item-history correctness:
 
 ### 1) Layer Consistency and Integrity
 - `stg_wolt_purchase_logs = 98,871`
-- `int_wolt_purchase_logs_curated = 98,871`
+- `int_wolt_purchase_logs_curated_filtered = 98,871`
 - `fct_order = 98,871`
 - `stg_wolt_order_items = 126,022`
 - `fct_order_item = 126,022`
@@ -124,13 +124,11 @@ Interpretation:
 
 ### 7) Incremental Observability
 Watermark rows present:
-- `int_wolt_item_logs_curated`
-- `int_wolt_purchase_logs_curated`
+- `int_wolt_item_logs_curated_deduped`
+- `int_wolt_purchase_logs_curated_filtered`
 
 Run metadata rows present for all reporting models:
-- `rpt_category_daily`
 - `rpt_customer_promo_behavior`
-- `rpt_item_pair_affinity`
 
 ## Problems Found and Fixed
 
@@ -160,7 +158,6 @@ Problem:
 Fix:
 - Added `pre_hook=ensure_run_metadata_table()` and `post_hook=upsert_run_metadata()` to:
   - [rpt_customer_promo_behavior.sql](wolt_assignment_dbt/models/marts/reporting/rpt_customer_promo_behavior.sql)
-  - [rpt_item_pair_affinity.sql](wolt_assignment_dbt/models/marts/reporting/rpt_item_pair_affinity.sql)
 
 Result:
 - `_run_metadata` now tracks all reporting marts.

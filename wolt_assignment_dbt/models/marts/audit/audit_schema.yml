@@ -310,3 +310,52 @@ models:
       - name: overall_item_price_anomaly_state_reason
         tests:
           - not_null
+
+  - name: rpt_data_quality_control_status
+    description: >
+      Unified control-status board that consolidates major modeled data-quality controls
+      into one row per control, including status/severity, problematic row count, and sample IDs.
+    columns:
+      - name: control_name
+        tests:
+          - not_null
+      - name: control_description
+        tests:
+          - not_null
+      - name: status
+        tests:
+          - not_null
+      - name: severity
+        tests:
+          - not_null
+      - name: problematic_row_count
+        tests:
+          - not_null
+      - name: reason
+        tests:
+          - not_null
+      - name: failing_issue_count
+        tests:
+          - not_null
+      - name: failing_rows_with_reason
+        tests:
+          - not_null
+
+  - name: rpt_data_quality_issue_details
+    description: >
+      Unified row-level issue surface across curation mismatches, item-mapping gaps,
+      promo-mapping gaps, anomaly controls, and pipeline flow checks.
+      Useful for debugging which exact entities caused warning/error states.
+    columns:
+      - name: issue_domain
+        tests:
+          - not_null
+      - name: issue_severity
+        tests:
+          - not_null
+      - name: issue_reason
+        tests:
+          - not_null
+      - name: primary_entity_id
+        tests:
+          - not_null

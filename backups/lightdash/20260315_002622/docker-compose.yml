@@ -1,0 +1,99 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: lightdash_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PGUSER:-lightdash}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-lightdash}
+      POSTGRES_DB: ${PGDATABASE:-lightdash}
+    volumes:
+      - lightdash_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-lightdash} -d ${PGDATABASE:-lightdash}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  lightdash:
+    image: lightdash/lightdash:latest
+    platform: linux/amd64
+    container_name: lightdash_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      minio-init:
+        condition: service_completed_successfully
+      headless-browser:
+        condition: service_started
+    ports:
+      - "8080:8080"
+      - "18080:8080"
+    env_file:
+      - .env
+    environment:
+      PORT: 8080
+      HOST: 0.0.0.0
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: ${PGUSER:-lightdash}
+      PGPASSWORD: ${PGPASSWORD:-lightdash}
+      PGDATABASE: ${PGDATABASE:-lightdash}
+      LIGHTDASH_SECRET: ${LIGHTDASH_SECRET:-replace_me}
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      SITE_URL: ${SITE_URL:-http://localhost:8080}
+      # S3-compatible storage (MinIO) for native pagination / persisted results.
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_BUCKET: ${S3_BUCKET:-lightdash-results}
+      S3_REGION: ${S3_REGION:-eu-central-1}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+      RESULTS_S3_BUCKET: ${RESULTS_S3_BUCKET:-lightdash-results}
+      RESULTS_S3_REGION: ${RESULTS_S3_REGION:-eu-central-1}
+      HEADLESS_BROWSER_HOST: ${HEADLESS_BROWSER_HOST:-http://headless-browser:3000}
+
+  minio:
+    image: minio/minio:latest
+    container_name: lightdash_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - lightdash_minio_data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: lightdash_minio_init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${S3_ACCESS_KEY:-minioadmin} ${S3_SECRET_KEY:-minioadmin}; do sleep 2; done;
+      mc mb -p local/${S3_BUCKET:-lightdash-results} || true;
+      mc anonymous set private local/${S3_BUCKET:-lightdash-results} || true;
+      exit 0;
+      "
+    restart: "no"
+
+  headless-browser:
+    image: browserless/chrome:latest
+    container_name: lightdash_headless_browser
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      MAX_CONCURRENT_SESSIONS: 4
+      PREBOOT_CHROME: "true"
+
+volumes:
+  lightdash_postgres_data:
+  lightdash_minio_data:

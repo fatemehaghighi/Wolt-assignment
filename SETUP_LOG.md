@@ -346,7 +346,7 @@ Key changes:
 
 - `int_wolt_item_versions`: item SCD-like validity windows
 - `int_wolt_order_items`: exploded basket lines + item snapshot + promo matching
-- `int_wolt_orders_enriched`: order-level derived metrics + customer order sequence
+- `int_wolt_orders_with_item_rollups`: order-level derived metrics + customer order sequence
 
 33. Added core marts.
 

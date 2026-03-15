@@ -44,7 +44,7 @@ Key reason for `648 -> 471`:
 - removes invalid-price candidates and conflicting duplicates by trust ordering.
 
 Implemented in:
-- `wolt_assignment_dbt/models/intermediate/int_wolt_item_logs_curated.sql`
+- `wolt_assignment_dbt/models/intermediate/int_wolt_item_logs_curated_deduped.sql`
 - `wolt_assignment_dbt/models/intermediate/int_wolt_item_scd2.sql`
 - `wolt_assignment_dbt/models/marts/core/dim_item_history.sql`
 - `wolt_assignment_dbt/models/marts/core/dim_item_current.sql`
@@ -64,11 +64,11 @@ Reason categories you will see:
 ## Purchase and Order-Item Chains
 
 ### Purchase chain
-- `raw.wolt_snack_store_purchase_logs -> stg_wolt_purchase_logs -> int_wolt_purchase_logs_curated -> fct_order`
+- `raw.wolt_snack_store_purchase_logs -> stg_wolt_purchase_logs -> int_wolt_purchase_logs_curated_filtered -> fct_order`
 - expected behavior: same purchase grain (`purchase_key`) with possible exclusion only for invalid event time.
 
 ### Order-item chain
-- `stg_wolt_order_items -> int_wolt_order_items_priced -> int_wolt_order_items_promoted -> fct_order_item`
+- `stg_wolt_order_items -> int_wolt_order_items_with_item_price -> int_wolt_order_items_with_price_then_promo -> fct_order_item`
 - expected behavior: row expansion in staging (basket explode), then stable row counts across priced/promoted/fact.
 - diagnostic focus: unmatched item SCD mapping and reconciliation checks.
 

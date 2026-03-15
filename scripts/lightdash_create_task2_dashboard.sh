@@ -306,7 +306,7 @@ sid = subprocess.check_output(
 ).strip()
 
 if not sid:
-    raise SystemExit('No active Lightdash session found. Login at http://localhost:8080 first.')
+    raise SystemExit('No active Lightdash session found. Login at http://localhost:18080 first.')
 
 cookie = signed_cookie(secret, sid)
 session = requests.Session()
@@ -317,7 +317,7 @@ session.headers.update(
     }
 )
 
-base_url = 'http://localhost:8080'
+base_url = 'http://localhost:18080'
 user_resp = session.get(f'{base_url}/api/v1/user', timeout=20)
 user_resp.raise_for_status()
 user = user_resp.json()['results']
@@ -345,33 +345,22 @@ queries = [
             'display': {},
         },
         'sql': f"""
-with latest as (
-  select max(snapshot_date) as snapshot_date
-  from `{dev_project}.{dev_dataset}_rpt.rpt_category_daily`
-)
 select
-  date_trunc(date_day, month) as period_month,
+  order_month as period_month,
   item_category,
-  sum(order_item_rows_revenue_eur) as revenue_eur,
-  sum(units_sold) as units_sold,
-  safe_divide(sum(order_item_rows_revenue_eur), nullif(sum(units_sold),0)) as weighted_avg_selling_price_eur
-from `{dev_project}.{dev_dataset}_rpt.rpt_category_daily`
-where snapshot_date = (select snapshot_date from latest)
-group by 1,2
+  order_item_rows_revenue_eur as revenue_eur,
+  units_sold,
+  weighted_avg_selling_price_eur
+from `{dev_project}.{dev_dataset}_rpt.rpt_category_monthly`
 order by period_month, revenue_eur desc
 """,
         'insight_sql': f"""
-with latest as (
-  select max(snapshot_date) as snapshot_date
-  from `{dev_project}.{dev_dataset}_rpt.rpt_category_daily`
-), monthly as (
+with monthly as (
   select
-    date_trunc(date_day, month) as period_month,
+    order_month as period_month,
     item_category,
-    sum(order_item_rows_revenue_eur) as revenue_eur
-  from `{dev_project}.{dev_dataset}_rpt.rpt_category_daily`
-  where snapshot_date = (select snapshot_date from latest)
-  group by 1,2
+    order_item_rows_revenue_eur as revenue_eur
+  from `{dev_project}.{dev_dataset}_rpt.rpt_category_monthly`
 ), latest_month as (
   select max(period_month) as period_month from monthly
 ), ranked as (
@@ -460,18 +449,13 @@ limit 1
             'display': {},
         },
         'sql': f"""
-with latest as (
-  select max(snapshot_date) as snapshot_date
-  from `{dev_project}.{dev_dataset}_rpt.rpt_category_daily`
-), monthly as (
+with monthly as (
   select
-    date_trunc(date_day, month) as period_month,
+    order_month as period_month,
     item_category,
-    sum(order_item_rows_revenue_eur) as revenue_eur,
-    sum(units_sold) as units_sold
-  from `{dev_project}.{dev_dataset}_rpt.rpt_category_daily`
-  where snapshot_date = (select snapshot_date from latest)
-  group by 1,2
+    order_item_rows_revenue_eur as revenue_eur,
+    units_sold
+  from `{dev_project}.{dev_dataset}_rpt.rpt_category_monthly`
 ), lagged as (
   select
     *,
@@ -491,17 +475,12 @@ where prev_revenue_eur is not null
 order by period_month desc, revenue_mom_change_eur asc
 """,
         'insight_sql': f"""
-with latest as (
-  select max(snapshot_date) as snapshot_date
-  from `{dev_project}.{dev_dataset}_rpt.rpt_category_daily`
-), monthly as (
+with monthly as (
   select
-    date_trunc(date_day, month) as period_month,
+    order_month as period_month,
     item_category,
-    sum(order_item_rows_revenue_eur) as revenue_eur
-  from `{dev_project}.{dev_dataset}_rpt.rpt_category_daily`
-  where snapshot_date = (select snapshot_date from latest)
-  group by 1,2
+    order_item_rows_revenue_eur as revenue_eur
+  from `{dev_project}.{dev_dataset}_rpt.rpt_category_monthly`
 ), lagged as (
   select
     period_month,
@@ -529,7 +508,7 @@ limit 1
     },
     {
         'slug': 'task2-item-pair-affinity-top',
-        'name': 'Q3 Top Item Pair Affinity',
+        'name': 'Q3 Top Product Pair Affinity',
         'description': 'Top item pairs by lift and order co-occurrence.',
         'config': {
             'type': 'vertical_bar',
@@ -541,35 +520,24 @@ limit 1
             'display': {},
         },
         'sql': f"""
-with latest as (
-  select max(snapshot_date) as snapshot_date
-  from `{dev_project}.{dev_dataset}_rpt.rpt_item_pair_affinity`
-)
 select
-  period_month,
-  concat(item_name_preferred_1, ' + ', item_name_preferred_2) as item_pair,
-  orders_together,
+  concat(product_a, ' + ', product_b) as item_pair,
+  pair_orders,
   support,
-  confidence_1_to_2,
-  confidence_2_to_1,
+  confidence_a_to_b,
+  confidence_b_to_a,
   lift
-from `{dev_project}.{dev_dataset}_rpt.rpt_item_pair_affinity`
-where snapshot_date = (select snapshot_date from latest)
-order by lift desc, orders_together desc
+from `{dev_project}.{dev_dataset}_rpt.rpt_cross_sell_product_pairs`
+order by lift desc, pair_orders desc
 limit 200
 """,
         'insight_sql': f"""
-with latest as (
-  select max(snapshot_date) as snapshot_date
-  from `{dev_project}.{dev_dataset}_rpt.rpt_item_pair_affinity`
-)
 select
   'Strongest pair (by lift)' as insight_title,
-  concat(item_name_preferred_1, ' + ', item_name_preferred_2) as insight_value,
-  concat('lift=', cast(round(lift, 3) as string), ', orders=', cast(orders_together as string)) as insight_comment
-from `{dev_project}.{dev_dataset}_rpt.rpt_item_pair_affinity`
-where snapshot_date = (select snapshot_date from latest)
-order by lift desc, orders_together desc
+  concat(product_a, ' + ', product_b) as insight_value,
+  concat('lift=', cast(round(lift, 3) as string), ', orders=', cast(pair_orders as string)) as insight_comment
+from `{dev_project}.{dev_dataset}_rpt.rpt_cross_sell_product_pairs`
+order by lift desc, pair_orders desc
 limit 1
 """,
     },
@@ -678,15 +646,12 @@ with latest as (
 )
 select 'First order had any promo' as segment, sum(cast(first_order_had_any_promo_units as int64)) as customers
 from `{dev_project}.{dev_dataset}_rpt.rpt_customer_promo_behavior`
-where snapshot_date = (select snapshot_date from latest)
 union all
 select 'First order had only promo', sum(cast(first_order_had_only_promo_units as int64)) as customers
 from `{dev_project}.{dev_dataset}_rpt.rpt_customer_promo_behavior`
-where snapshot_date = (select snapshot_date from latest)
 union all
 select 'No promo on first order', count(*) - sum(cast(first_order_had_any_promo_units as int64)) as customers
 from `{dev_project}.{dev_dataset}_rpt.rpt_customer_promo_behavior`
-where snapshot_date = (select snapshot_date from latest)
 """,
         'insight_sql': f"""
 with latest as (
@@ -698,8 +663,7 @@ with latest as (
     sum(cast(first_order_had_any_promo_units as int64)) as first_order_with_any_promo,
     sum(cast(first_order_had_only_promo_units as int64)) as first_order_only_promo
   from `{dev_project}.{dev_dataset}_rpt.rpt_customer_promo_behavior`
-  where snapshot_date = (select snapshot_date from latest)
-)
+  )
 select
   'Promo-acquired first orders' as insight_title,
   concat(cast(round(safe_divide(first_order_with_any_promo, nullif(customers, 0)) * 100, 2) as string), '%') as insight_value,
@@ -714,7 +678,7 @@ guide_meta = {
     'task2-category-monthly-growth': {
         'what_it_says': 'Shows monthly revenue trend by item category to identify growth leaders and laggards.',
         'main_metric': 'Revenue (EUR) by category and month.',
-        'metric_calc': 'SUM(revenue_eur) grouped by date_trunc(period_month, month) and item_category from rpt_category_daily latest snapshot.',
+        'metric_calc': 'Monthly revenue from rpt_category_monthly (month grain) by item_category.',
         'how_to_use': 'Pick categories with consistently rising curves; investigate categories with flattening/declining trend.',
     },
     'task2-star-products-by-category': {
@@ -818,5 +782,5 @@ print(f"Authenticated as: {user['email']}")
 print(f"Project UUID: {project_uuid}")
 print(f"Space UUID: {space_uuid}")
 print(f"Dashboard UUID: {dashboard_uuid}")
-print(f"Open dashboard: http://localhost:8080/projects/{project_uuid}/dashboards/{dashboard_uuid}")
+print(f"Open dashboard: http://localhost:18080/projects/{project_uuid}/dashboards/{dashboard_uuid}")
 PY

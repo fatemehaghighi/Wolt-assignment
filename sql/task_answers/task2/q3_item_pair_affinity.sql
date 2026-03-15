@@ -2,21 +2,17 @@
 -- Do some products get bought together with more frequency than others?
 
 select
-    period_month,
-    item_key_sk_1,
-    item_name_preferred_1,
-    item_category_1,
-    item_key_sk_2,
-    item_name_preferred_2,
-    item_category_2,
-    orders_together,
+    product_a,
+    category_a,
+    product_b,
+    category_b,
+    pair_orders,
     support,
-    confidence_1_to_2,
-    confidence_2_to_1,
-    lift
-from `wolt-assignment-489610.analytics_dev_rpt.rpt_item_pair_affinity`
-where snapshot_date = (
-    select max(snapshot_date)
-    from `wolt-assignment-489610.analytics_dev_rpt.rpt_item_pair_affinity`
-)
-order by period_month, lift desc, orders_together desc;
+    confidence_a_to_b,
+    confidence_b_to_a,
+    lift,
+    expected_pair_orders_independent,
+    pair_orders_vs_expected_delta,
+    actionability_bucket
+from `wolt-assignment-489610.analytics_dev_rpt.rpt_cross_sell_product_pairs`
+order by actionability_rank asc, lift desc, pair_orders desc;

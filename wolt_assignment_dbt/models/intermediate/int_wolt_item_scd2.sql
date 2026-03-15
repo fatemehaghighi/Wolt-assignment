@@ -2,7 +2,7 @@
 -- Build item SCD2 validity windows from curated item log events.
 --
 -- Key assumptions:
--- 1) int_wolt_item_logs_curated contains the trusted event stream.
+-- 1) int_wolt_item_logs_curated_deduped contains the trusted event stream.
 -- 2) time_log_created_utc is the business-effective ordering field.
 -- 3) For identical timestamps within an item_key, log_item_id is used as deterministic tie-breaker.
 -- 4) No-op republished events can exist with different log_item_id/time but identical item attributes.
@@ -60,7 +60,7 @@ with ordered_events as (
             partition by item_key
             order by time_log_created_utc, log_item_id
         ) as previous_attribute_state_hash
-    from {{ ref('int_wolt_item_logs_curated') }}
+    from {{ ref('int_wolt_item_logs_curated_deduped') }}
 ),
 change_events as (
     select *

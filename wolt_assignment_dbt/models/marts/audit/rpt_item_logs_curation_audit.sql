@@ -104,7 +104,7 @@ curated as (
         log_item_id,
         time_log_created_utc as curated_time_log_created_utc,
         product_base_price_gross_eur as curated_price_gross_eur
-    from {{ ref('int_wolt_item_logs_curated') }}
+    from {{ ref('int_wolt_item_logs_curated_deduped') }}
 )
 select
     e.log_item_id,

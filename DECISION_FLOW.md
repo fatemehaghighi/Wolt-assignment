@@ -24,7 +24,7 @@ Observed issue:
 - Duplicate `log_item_id` groups with conflicting payload values (for example null/negative vs positive price).
 
 Decision:
-- Curate trusted item logs in `int_wolt_item_logs_curated`.
+- Curate trusted item logs in `int_wolt_item_logs_curated_deduped`.
 - Keep only parseable event-time rows and positive non-null base price rows.
 - Resolve duplicates deterministically.
 
@@ -115,7 +115,7 @@ Controls:
   - `dim_item_history` is partitioned on `valid_from_utc` due to timeline-growth and time-window access.
   - `dim_item_current` remains unpartitioned unless workload shifts to large time-window scans on current-state table.
 - Layering/performance tradeoff policy:
-  - `int_wolt_order_items_priced` intentionally joins `int_wolt_item_scd2` (intermediate) instead of `dim_item_history` (mart) to keep dependency direction clean.
+  - `int_wolt_order_items_with_item_price` intentionally joins `int_wolt_item_scd2` (intermediate) instead of `dim_item_history` (mart) to keep dependency direction clean.
   - If the SCD2 view becomes costly, next step is to materialize/optimize `int_wolt_item_scd2` (table/incremental + partition/cluster), not to break layer boundaries by default.
   - Temporary direct joins to mart dimensions are incident-only exceptions and should be rolled back after upstream optimization.
 

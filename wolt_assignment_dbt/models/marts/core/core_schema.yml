@@ -171,11 +171,11 @@ models:
         description: Sum of units_in_order_item_row on promo rows in the order.
       - name: has_any_promo_units_in_order
         description: True when promo_units_in_order > 0.
-      - name: modeled_order_items_base_amount_gross_eur
+      - name: derived_order_items_base_amount_gross_eur
         description: Sum of order-item-row base amounts used for order-level reconciliation.
-      - name: modeled_order_items_discount_amount_gross_eur
+      - name: derived_order_items_discount_amount_gross_eur
         description: Sum of order-item-row discount amounts used for order-level reconciliation.
-      - name: modeled_order_items_final_amount_gross_eur
+      - name: derived_order_items_final_amount_gross_eur
         description: Sum of order-item-row final amounts used for order-level reconciliation.
       - name: customer_order_number
         description: >
@@ -194,16 +194,38 @@ models:
       Core table for Task 1 item/promo pricing analysis and Task 2 category/star-product/affinity analysis.
     columns:
       - name: order_item_sk
+        config:
+          meta:
+            metrics:
+              order_item_rows:
+                type: count_distinct
+                label: Order item rows
+                description: Distinct count of order-item rows.
         tests:
           - not_null
           - unique
       - name: order_sk
+        config:
+          meta:
+            metrics:
+              orders:
+                type: count_distinct
+                label: Orders
+                description: Distinct count of orders in the filtered result set.
         tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('fct_order')
                 field: order_sk
+      - name: customer_sk
+        description: Customer surrogate key on order-item grain for customer-level product analysis.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_sk
       - name: purchase_key
         description: Parent order business key retained for traceability and denormalized exports.
         tests:
@@ -234,8 +256,23 @@ models:
               arguments:
                 to: ref('dim_item_history')
                 field: item_scd_sk
+      - name: order_date
+        description: Berlin-local order date used as canonical business date for assignment analysis.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_day
       - name: units_in_order_item_row
         description: Purchased unit count for this order-item row; used in units sold and promo unit metrics.
+        config:
+          meta:
+            metrics:
+              units_sold:
+                type: sum
+                label: Units sold
+                description: Sum of units in order-item rows.
       - name: item_unit_base_price_gross_eur
         description: Base unit price from item history at order time, before promo discount.
       - name: discount_pct_applied
@@ -244,11 +281,54 @@ models:
         description: item_unit_base_price_gross_eur * (discount_pct_applied / 100).
       - name: item_unit_final_price_gross_eur
         description: item_unit_base_price_gross_eur - item_unit_discount_amount_gross_eur.
+        config:
+          meta:
+            metrics:
+              avg_item_unit_final_price_gross_eur:
+                type: average
+                label: Avg item unit final price gross eur
+                description: Average final unit price including VAT.
       - name: order_item_row_base_amount_gross_eur
         description: item_unit_base_price_gross_eur * units_in_order_item_row.
       - name: order_item_row_discount_amount_gross_eur
         description: item_unit_discount_amount_gross_eur * units_in_order_item_row.
+        config:
+          meta:
+            metrics:
+              total_discount_gross_eur:
+                type: sum
+                label: Total discount gross eur
+                description: Sum of gross discount amounts at order-item-row level.
       - name: order_item_row_final_amount_gross_eur
         description: item_unit_final_price_gross_eur * units_in_order_item_row.
+        config:
+          meta:
+            metrics:
+              total_revenue_gross_eur:
+                type: sum
+                label: Total revenue gross eur
+                description: Sum of gross final order-item-row amounts.
       - name: is_promo_item
         description: True when this order-item row received promo discount; supports promo uptake and conversion analyses.
+      - name: promo_sk
+        description: Promo surrogate key for the applied promo rule (null when no promo matched).
+      - name: order_ts_utc
+        description: Order event timestamp in UTC at order-item grain.
+        tests:
+          - not_null
+      - name: order_date_utc
+        description: UTC calendar date derived from order_ts_utc.
+        tests:
+          - not_null
+      - name: item_name_en
+        description: Item name in English from item history at order time.
+      - name: item_name_de
+        description: Item name in German from item history at order time.
+      - name: item_name_preferred
+        description: Preferred item display name (English when available, otherwise German).
+      - name: item_category
+        description: Item category from item history at order time.
+      - name: brand_name
+        description: Item brand from item history at order time.
+      - name: vat_rate_pct
+        description: VAT percentage points from item history at order time.

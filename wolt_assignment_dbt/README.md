@@ -29,11 +29,10 @@ dbt project for the Wolt assignment using a 3-layer warehouse model:
 
 ## Reporting Marts
 
-- `rpt_category_daily`: daily category KPIs, category-attributed customer counts
 - `rpt_customer_promo_behavior`: customer promo behavior computed from item-level promo vs non-promo composition
-- `rpt_item_pair_affinity`: monthly item-pair affinity with month-context item labels from order-time facts
+- `rpt_cross_sell_product_pairs`: product-pair affinity with support/confidence/lift and actionability buckets
 
-Reporting marts are daily snapshots keyed by `snapshot_date` + business grain.
+`rpt_category_monthly` is latest-state by business grain (`order_month` + category).
 Same-day reruns replace that day snapshot; new-day runs append new snapshots.
 Run-level metadata (`run_id`, `as_of_run_ts`, `as_of_run_date`, `publish_tag`) is stored in system metadata tables.
 
@@ -55,7 +54,7 @@ make dbt-backfill-item-scd2-dev BACKFILL_DAYS=35
 make dbt-backfill-orders-dev BACKFILL_DAYS=35
 
 # targeted reporting full refresh
-./scripts/dbt.sh build --target dev --full-refresh --select rpt_category_daily rpt_customer_promo_behavior rpt_item_pair_affinity
+./scripts/dbt.sh build --target dev --full-refresh --select rpt_category_monthly_kpi_long rpt_customer_promo_behavior rpt_cross_sell_product_pairs
 ```
 
 ## Exporting Submission Artifacts
@@ -74,7 +73,8 @@ Export scripts:
 - `outputs/task1_orders.csv`
 - `outputs/task1_order_items.csv`
 
-`export-task2` writes three files:
+`export-task2` writes four files:
 - `outputs/task2_category_growth_metrics.csv`
+- `outputs/task2_category_monthly_growth_metrics.csv`
 - `outputs/task2_customer_promo_behavior.csv`
 - `outputs/task2_item_pair_affinity.csv`

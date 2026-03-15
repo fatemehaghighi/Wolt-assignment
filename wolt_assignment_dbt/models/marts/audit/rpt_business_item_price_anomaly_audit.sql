@@ -7,7 +7,7 @@ with base as (
         item_key,
         time_log_created_utc,
         cast(product_base_price_gross_eur as numeric) as item_price_gross_eur
-    from {{ ref('int_wolt_item_logs_curated') }}
+    from {{ ref('int_wolt_item_logs_curated_deduped') }}
     where time_log_created_utc is not null
 ),
 item_stats as (

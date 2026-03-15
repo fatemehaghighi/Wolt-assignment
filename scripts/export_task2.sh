@@ -20,43 +20,34 @@ bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
   --nouse_legacy_sql \
   --format=csv \
   --max_rows=1000000000 \
-  "with latest_snapshot as (
-      select max(snapshot_date) as snapshot_date
-      from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_category_daily\`
-    )
-    select
-      snapshot_date,
-      date_day,
+  "select
+      order_month,
+      metric_name,
       item_category,
-      orders,
-      customers,
-      customers_whose_first_order_included_category,
-      customers_with_repeat_orders_including_category,
-      units_sold,
-      promo_units_sold,
-      order_item_rows_revenue_eur,
-      order_item_rows_discount_eur,
-      avg_selling_price_eur,
-      avg_order_units_for_orders_with_category,
-      avg_delivery_distance_meters
-    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_category_daily\`
-    where snapshot_date = (select snapshot_date from latest_snapshot)
-    order by date_day, item_category" \
+      metric_value
+    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_category_monthly_kpi_long\`
+    order by order_month, item_category, metric_name" \
   > "${repo_root}/outputs/task2_category_growth_metrics.csv"
 
 bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
   --nouse_legacy_sql \
   --format=csv \
   --max_rows=1000000000 \
-  "with latest_snapshot as (
-      select max(snapshot_date) as snapshot_date
-      from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_customer_promo_behavior\`
-    )
-    select
-      snapshot_date,
+  "select
+      *
+    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_category_overall_scorecard\`
+    order by revenue_eur desc" \
+  > "${repo_root}/outputs/task2_category_monthly_growth_metrics.csv"
+
+bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
+  --nouse_legacy_sql \
+  --format=csv \
+  --max_rows=1000000000 \
+  "select
       customer_sk,
       customer_key,
       first_order_ts_utc,
+      first_order_ts_berlin,
       first_order_had_any_promo_units,
       first_order_had_only_promo_units,
       orders_with_any_promo_units,
@@ -68,7 +59,6 @@ bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
       promo_only_customer_flag,
       lifetime_orders
     from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_customer_promo_behavior\`
-    where snapshot_date = (select snapshot_date from latest_snapshot)
     order by customer_sk" \
   > "${repo_root}/outputs/task2_customer_promo_behavior.csv"
 
@@ -76,29 +66,31 @@ bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
   --nouse_legacy_sql \
   --format=csv \
   --max_rows=1000000000 \
-  "with latest_snapshot as (
-      select max(snapshot_date) as snapshot_date
-      from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_item_pair_affinity\`
-    )
-    select
-      snapshot_date,
-      period_month,
-      item_key_sk_1,
-      item_key_sk_2,
-      item_name_preferred_1,
-      item_name_preferred_2,
-      item_category_1,
-      item_category_2,
-      orders_together,
+  "select
+      product_a,
+      product_b,
+      pair_orders,
+      product_a_orders,
+      product_b_orders,
+      total_orders,
       support,
-      confidence_1_to_2,
-      confidence_2_to_1,
-      lift
-    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_item_pair_affinity\`
-    where snapshot_date = (select snapshot_date from latest_snapshot)
-    order by period_month, item_key_sk_1, item_key_sk_2" \
+      expected_support_independent,
+      expected_pair_orders_independent,
+      pair_orders_vs_expected_delta,
+      pair_orders_vs_expected_pct,
+      confidence_a_to_b,
+      confidence_b_to_a,
+      lift,
+      category_a,
+      category_b,
+      pattern,
+      actionability_bucket,
+      actionability_rank
+    from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_rpt.rpt_cross_sell_product_pairs\`
+    order by actionability_rank asc, lift desc, pair_orders desc" \
   > "${repo_root}/outputs/task2_item_pair_affinity.csv"
 
 echo "Wrote outputs/task2_category_growth_metrics.csv"
+echo "Wrote outputs/task2_category_monthly_growth_metrics.csv"
 echo "Wrote outputs/task2_customer_promo_behavior.csv"
 echo "Wrote outputs/task2_item_pair_affinity.csv"

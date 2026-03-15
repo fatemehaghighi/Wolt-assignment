@@ -1,0 +1,15 @@
+{
+  "name": "wolt_assignment",
+  "version": "1.0.0",
+  "description": "Production-style analytics engineering project for Wolt assignment on BigQuery + dbt.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@lightdash/cli": "^0.2616.0"
+  }
+}

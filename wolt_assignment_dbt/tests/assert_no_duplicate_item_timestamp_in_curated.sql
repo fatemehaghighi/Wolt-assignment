@@ -4,7 +4,7 @@ select
     item_key,
     time_log_created_utc,
     count(*) as row_cnt
-from {{ ref('int_wolt_item_logs_curated') }}
+from {{ ref('int_wolt_item_logs_curated_deduped') }}
 group by 1, 2
 having count(*) > 1
 

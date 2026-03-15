@@ -3,19 +3,16 @@
 
 with latest_cat as (
     select *
-    from `wolt-assignment-489610.analytics_dev_rpt.rpt_category_daily`
-    where snapshot_date = (
-        select max(snapshot_date)
-        from `wolt-assignment-489610.analytics_dev_rpt.rpt_category_daily`
-    )
+    from `wolt-assignment-489610.analytics_dev_rpt.rpt_category_monthly`
 ),
 category_rank as (
     select
         item_category,
         sum(order_item_rows_revenue_eur) as revenue_eur,
         sum(units_sold) as units_sold,
-        -- Weighted ASP across days: total revenue / total units.
-        safe_divide(sum(order_item_rows_revenue_eur), nullif(sum(units_sold), 0)) as avg_selling_price_eur
+        -- Weighted average selling price:
+        -- SUM(revenue) / SUM(units), preserving unit weighting.
+        safe_divide(sum(order_item_rows_revenue_eur), nullif(sum(units_sold), 0)) as weighted_avg_selling_price_eur
     from latest_cat
     group by item_category
 ),
@@ -37,7 +34,7 @@ select
     c.item_category,
     c.revenue_eur as category_revenue_eur,
     c.units_sold as category_units_sold,
-    c.avg_selling_price_eur as category_avg_selling_price_eur,
+    c.weighted_avg_selling_price_eur as category_weighted_avg_selling_price_eur,
     s.item_key as star_item_key,
     s.item_name_preferred as star_item_name,
     s.revenue_eur as star_item_revenue_eur,

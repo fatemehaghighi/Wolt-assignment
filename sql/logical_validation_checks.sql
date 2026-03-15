@@ -12,7 +12,7 @@ with
 c1 as (
   select "stg_purchase_rows" as check_name, cast(count(*) as string) as check_value from `wolt-assignment-489610.analytics_dev.stg_wolt_purchase_logs`
   union all
-  select "int_purchase_rows", cast(count(*) as string) from `wolt-assignment-489610.analytics_dev.int_wolt_purchase_logs_curated`
+  select "int_purchase_rows", cast(count(*) as string) from `wolt-assignment-489610.analytics_dev.int_wolt_purchase_logs_curated_filtered`
   union all
   select "fct_order_rows", cast(count(*) as string) from `wolt-assignment-489610.analytics_dev.fct_order`
   union all
@@ -36,20 +36,20 @@ c2 as (
 c3 as (
   select
     "order_reconciliation_max_abs_diff" as check_name,
-    cast(max(abs(o.total_basket_value_eur - coalesce(m.modeled_basket_value_eur, 0))) as string) as check_value
+    cast(max(abs(o.total_basket_value_eur - coalesce(m.derived_basket_value_eur, 0))) as string) as check_value
   from `wolt-assignment-489610.analytics_dev.fct_order` o
   left join (
-    select order_sk, sum(line_final_amount_gross_eur) as modeled_basket_value_eur
+    select order_sk, sum(line_final_amount_gross_eur) as derived_basket_value_eur
     from `wolt-assignment-489610.analytics_dev.fct_order_item`
     group by order_sk
   ) m using(order_sk)
   union all
   select
     "order_reconciliation_over_0_001_cnt",
-    cast(countif(abs(o.total_basket_value_eur - coalesce(m.modeled_basket_value_eur, 0)) > 0.001) as string)
+    cast(countif(abs(o.total_basket_value_eur - coalesce(m.derived_basket_value_eur, 0)) > 0.001) as string)
   from `wolt-assignment-489610.analytics_dev.fct_order` o
   left join (
-    select order_sk, sum(line_final_amount_gross_eur) as modeled_basket_value_eur
+    select order_sk, sum(line_final_amount_gross_eur) as derived_basket_value_eur
     from `wolt-assignment-489610.analytics_dev.fct_order_item`
     group by order_sk
   ) m using(order_sk)
@@ -64,7 +64,7 @@ c4 as (
   )
   union all
   select "items_missing_scd_match_cnt", cast(count(*) as string)
-  from `wolt-assignment-489610.analytics_dev.int_wolt_order_items_priced`
+  from `wolt-assignment-489610.analytics_dev.int_wolt_order_items_with_item_price`
   where item_scd_sk is null
 )
 select * from c1
@@ -80,7 +80,7 @@ with stg as (
   select * from `wolt-assignment-489610.analytics_dev.stg_wolt_item_logs`
 ),
 cur as (
-  select * from `wolt-assignment-489610.analytics_dev.int_wolt_item_logs_curated`
+  select * from `wolt-assignment-489610.analytics_dev.int_wolt_item_logs_curated_deduped`
 ),
 dup as (
   select log_item_id, count(*) as c
@@ -150,13 +150,13 @@ order by metric;
 with
 same_ts as (
   select customer_key, time_order_received_utc, count(*) as c
-  from `wolt-assignment-489610.analytics_dev.int_wolt_purchase_logs_curated`
+  from `wolt-assignment-489610.analytics_dev.int_wolt_purchase_logs_curated_filtered`
   group by 1, 2
   having c > 1
 ),
 promo_multi_match as (
   select p.order_item_sk, count(*) as promo_matches
-  from `wolt-assignment-489610.analytics_dev.int_wolt_order_items_priced` p
+  from `wolt-assignment-489610.analytics_dev.int_wolt_order_items_with_item_price` p
   join `wolt-assignment-489610.analytics_dev.stg_wolt_promos` pr
     on p.item_key = pr.item_key
    and p.order_date_berlin >= pr.promo_start_date
@@ -188,6 +188,6 @@ order by model_name;
 
 select model_name, count(*) as run_rows, max(as_of_run_ts) as latest_run_ts
 from `wolt-assignment-489610.analytics_dev._run_metadata`
-where model_name in ("rpt_category_daily", "rpt_customer_promo_behavior", "rpt_item_pair_affinity")
+where model_name in ("rpt_category_monthly_kpi_long", "rpt_customer_promo_behavior", "rpt_cross_sell_product_pairs")
 group by model_name
 order by model_name;

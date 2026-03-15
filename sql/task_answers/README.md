@@ -20,6 +20,8 @@ If you run in another project/dataset prefix, replace those references.
 
 ## Task 2
 - Q1: `task2/q1_best_categories_and_star_products.sql`
+
+- Q1 Dashboard Pack: `task2/dashboard_q1/` (monthly performance, scorecard/controls, star products)
 - Q2: `task2/q2_declining_categories_diagnostics.sql`
 - Q3: `task2/q3_item_pair_affinity.sql`
 - Q4: `task2/q4_category_consumption_by_time.sql`

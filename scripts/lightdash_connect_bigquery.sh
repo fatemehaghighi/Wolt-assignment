@@ -71,12 +71,12 @@ sid = subprocess.check_output(
 
 if not sid:
     raise SystemExit(
-        'No active Lightdash session found. Login once at http://localhost:8080, then rerun this command.'
+        'No active Lightdash session found. Login once at http://localhost:18080, then rerun this command.'
     )
 
 cookie = signed_cookie(secret, sid)
 headers = {'Cookie': f'connect.sid={cookie}', 'Content-Type': 'application/json'}
-base_url = 'http://localhost:8080'
+base_url = 'http://localhost:18080'
 
 user_resp = requests.get(f'{base_url}/api/v1/user', headers=headers, timeout=20)
 user_resp.raise_for_status()
@@ -134,5 +134,5 @@ print(f"Authenticated as: {user['email']}")
 print(f"Connected BigQuery project: {env['DBT_BQ_DEV_PROJECT']}")
 print(f"Lightdash project UUID: {project_uuid}")
 print('SQL Runner table discovery: OK')
-print(f'Open: http://localhost:8080/projects/{project_uuid}')
+print(f'Open: http://localhost:18080/projects/{project_uuid}')
 PY

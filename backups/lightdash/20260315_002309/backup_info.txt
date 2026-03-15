@@ -1,0 +1,5 @@
+backup_timestamp=20260315_002309
+created_at=2026-03-14T23:23:15Z
+container=lightdash_postgres
+database=lightdash
+user=lightdash

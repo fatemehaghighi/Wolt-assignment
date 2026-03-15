@@ -2,9 +2,8 @@
     config(
         materialized='incremental',
         incremental_strategy='merge',
-        unique_key=['snapshot_date', 'customer_sk'],
+        unique_key=['customer_sk'],
         on_schema_change='sync_all_columns',
-        partition_by={'field': 'snapshot_date', 'data_type': 'date'},
         cluster_by=['customer_sk'],
         pre_hook=ensure_run_metadata_table(),
         post_hook=upsert_run_metadata()
@@ -17,6 +16,7 @@ with order_level_item_mix as (
         oi.order_sk,
         any_value(o.customer_key) as customer_key,
         any_value(o.order_ts_utc) as order_ts_utc,
+        any_value(o.order_ts_berlin) as order_ts_berlin,
         any_value(o.is_first_order_for_customer) as is_first_order_for_customer,
         -- Business need (Task 2 Q5): did customer consume promo units vs non-promo units?
         sum(case when oi.is_promo_item then oi.units_in_order_item_row else 0 end) as promo_units_purchased,
@@ -33,6 +33,7 @@ customer_rollup as (
         customer_sk,
         any_value(customer_key) as customer_key,
         min(order_ts_utc) as first_order_ts_utc,
+        min(order_ts_berlin) as first_order_ts_berlin,
         count(*) as lifetime_orders,
         -- Business need (Task 2 Q5): customer-level promo adoption pattern across orders.
         sum(cast(promo_units_purchased > 0 as int64)) as orders_with_any_promo_units,
@@ -48,10 +49,10 @@ customer_rollup as (
     group by customer_sk
 )
 select
-    {{ run_date_expr() }} as snapshot_date,
     customer_sk,
     customer_key,
     first_order_ts_utc,
+    first_order_ts_berlin,
     first_order_had_any_promo_units,
     first_order_had_only_promo_units,
     orders_with_any_promo_units,

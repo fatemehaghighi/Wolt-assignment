@@ -34,6 +34,13 @@ vars:
   system_schema_suffix: "sys"
   publish_tag: "scheduled"
   pair_affinity_min_orders_together: 5
+  cross_sell_min_pair_orders: 50
+  cross_sell_top_products_limit: 30
+  cross_sell_trend_top_pairs: 5
+  cross_sell_strong_lift_threshold: 1.3
+  cross_sell_high_support_threshold: 0.02
+  cross_sell_neutral_lift_lower: 0.9
+  cross_sell_neutral_lift_upper: 1.1
   dim_date_start_date: "2019-01-01"
   dim_date_end_date: "2026-12-31"
 

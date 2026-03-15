@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wolt Assignment - Full Presentation</title>
+  <style>
+    :root {
+      /* Wolt-inspired palette (public references): cyan primary + dark neutrals */
+      --wolt-cyan: #009de0;
+      --wolt-dark: #141414;
+      --bg: #0f1219;
+      --panel: #171d2a;
+      --panel2: #1d2535;
+      --txt: #eef4ff;
+      --muted: #9fb0c9;
+      --ok: #5ecf88;
+      --warn: #ffd166;
+      --bad: #ff7f93;
+      --border: #2a3550;
+      --chip: #11253a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--txt);
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(1200px 600px at 0% -20%, rgba(0,157,224,0.18), transparent 60%),
+        radial-gradient(1000px 500px at 100% 0%, rgba(0,157,224,0.10), transparent 65%),
+        var(--bg);
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,18,25,0.94);
+      backdrop-filter: blur(8px);
+    }
+    .btn {
+      background: #122337;
+      color: var(--txt);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 13px;
+      padding: 7px 11px;
+      cursor: pointer;
+    }
+    .btn:hover { border-color: var(--wolt-cyan); }
+    .counter { margin-left: auto; color: var(--muted); font-size: 13px; }
+
+    .deck {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 18px 16px 64px;
+    }
+
+    .slide {
+      display: none;
+      min-height: 78vh;
+      background: linear-gradient(180deg, rgba(23,29,42,0.95), rgba(17,23,35,0.98));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 20px;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.30);
+    }
+    .slide.active { display: block; }
+
+    h1, h2, h3 { margin: 0 0 12px; letter-spacing: 0.1px; }
+    h1 { font-size: 40px; line-height: 1.15; }
+    h2 { font-size: 30px; line-height: 1.2; color: #dff4ff; }
+    h3 { font-size: 20px; line-height: 1.25; color: var(--wolt-cyan); }
+    p, li { font-size: 17px; line-height: 1.45; }
+    .small { font-size: 14px; color: var(--muted); }
+    .muted { color: var(--muted); }
+
+    .chip {
+      display: inline-block;
+      background: var(--chip);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: #cde9ff;
+      font-size: 12px;
+      padding: 4px 10px;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 12px;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .card {
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .callout {
+      margin-top: 12px;
+      padding: 11px 12px;
+      border-left: 4px solid var(--wolt-cyan);
+      background: #122237;
+      border-radius: 8px;
+    }
+
+    .kpi {
+      font-size: 26px;
+      font-weight: 700;
+      color: #dcf6ff;
+      margin: 6px 0 2px;
+    }
+    .kpi-sub { font-size: 13px; color: var(--muted); }
+
+    .status-ok { color: var(--ok); font-weight: 700; }
+    .status-warn { color: var(--warn); font-weight: 700; }
+    .status-bad { color: var(--bad); font-weight: 700; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #12243a; color: #d9f2ff; }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .node {
+      background: #102338;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 8px 10px;
+      font-size: 13px;
+      color: #d4ecff;
+    }
+    .arrow { color: var(--wolt-cyan); font-weight: 700; }
+
+    details {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #131e31;
+      padding: 8px 10px;
+      margin-top: 10px;
+    }
+    summary { cursor: pointer; color: #d8f1ff; font-weight: 600; }
+
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+    @media (max-width: 980px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      .slide { padding: 20px; min-height: auto; }
+      h1 { font-size: 30px; }
+      h2 { font-size: 24px; }
+      p, li { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <button class="btn" onclick="prevSlide()">Prev</button>
+    <button class="btn" onclick="nextSlide()">Next</button>
+    <button class="btn" onclick="toggleAll()">Toggle All</button>
+    <button class="btn" onclick="window.print()">Print / Save PDF</button>
+    <span id="counter" class="counter"></span>
+  </header>
+
+  <main class="deck">
+
+    <section class="slide active">
+      <h1>Wolt Snack Shop<br/>Senior Analytics Engineering Assignment</h1>
+      <p class="muted">Full thinking flow, scalable data model, quality controls, and business storytelling delivery.</p>
+      <p>
+        <span class="chip">BigQuery</span>
+        <span class="chip">dbt</span>
+        <span class="chip">Dagster</span>
+        <span class="chip">Lightdash</span>
+        <span class="chip">Dev + Prod</span>
+      </p>
+      <div class="grid3">
+        <div class="card">
+          <h3>Task 1</h3>
+          <p>Prepare modeled datasets for 8 business questions with simple downstream querying.</p>
+        </div>
+        <div class="card">
+          <h3>Task 2</h3>
+          <p>Explain growth drivers across categories, products, cross-sell, time behavior, and promo acquisition.</p>
+        </div>
+        <div class="card">
+          <h3>Approach</h3>
+          <p>Production-minded ELT design: layering, tests, audits, and orchestration discipline.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>1) Thinking Flow and Decision Process</h2>
+      <div class="flow">
+        <span class="node">Profile raw sources</span><span class="arrow">→</span>
+        <span class="node">Define grains + relationships</span><span class="arrow">→</span>
+        <span class="node">Design staging schema</span><span class="arrow">→</span>
+        <span class="node">Build intermediate logic</span><span class="arrow">→</span>
+        <span class="node">Publish facts/dims</span><span class="arrow">→</span>
+        <span class="node">Create business reports</span><span class="arrow">→</span>
+        <span class="node">Add tests + audits + orchestration</span>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>What was optimized first</h3>
+          <ul>
+            <li>Correct grain separation (order vs order-item).</li>
+            <li>Historical correctness (item SCD2).</li>
+            <li>Promo validity correctness (Berlin business calendar).</li>
+            <li>Scale readiness (incremental + watermarks + backfill controls).</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Why this is senior-level</h3>
+          <ul>
+            <li>Not only SQL transformations, but operational reliability and governance.</li>
+            <li>Clear assumptions and tradeoffs documented.</li>
+            <li>Business-facing metrics backed by testable lineage.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>2) Data Exploration and Source Understanding</h2>
+      <div class="grid3">
+        <div class="card">
+          <h3>Purchase scope</h3>
+          <div class="kpi">98,871</div><div class="kpi-sub">distinct orders</div>
+          <div class="kpi">2,001</div><div class="kpi-sub">distinct customers</div>
+        </div>
+        <div class="card">
+          <h3>Order-item scope</h3>
+          <div class="kpi">126,022</div><div class="kpi-sub">order-item rows</div>
+          <div class="kpi">161,980</div><div class="kpi-sub">units sold</div>
+        </div>
+        <div class="card">
+          <h3>Revenue scope</h3>
+          <div class="kpi">€445,427.72</div><div class="kpi-sub">gross final revenue</div>
+          <div class="kpi">€3,883.72</div><div class="kpi-sub">gross discount</div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>Item-log stream profile</h3>
+          <ul>
+            <li>Raw item logs: 648 rows</li>
+            <li>Staging item logs: 648 rows</li>
+            <li>Curated item logs: 471 rows (dedup/quality rules)</li>
+            <li>Final item history SCD2: 401 rows</li>
+            <li>Current active items: 60 item keys</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Key observed data realities</h3>
+          <ul>
+            <li>Some brand values are null in item logs (documented and audited).</li>
+            <li>Same product can appear under different categories over history.</li>
+            <li>Basket JSON requires robust explode + aggregation safeguards.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>3) Relationship Discovery and Grain Design</h2>
+      <table>
+        <thead>
+          <tr><th>Entity</th><th>Business Key</th><th>Natural Grain</th><th>Why it matters</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Purchase</td><td><span class="mono">purchase_key</span></td><td>1 row per order</td><td>fees, basket total, delivery distance are order-level</td></tr>
+          <tr><td>Order Item</td><td><span class="mono">purchase_key + item_key</span></td><td>1 row per order-item after explode</td><td>item/category/promo analysis needs item-level grain</td></tr>
+          <tr><td>Item Log</td><td><span class="mono">log_item_id</span></td><td>1 row per item change event</td><td>required to preserve historical item states</td></tr>
+          <tr><td>Promo Rule</td><td><span class="mono">item_key + date window + type</span></td><td>1 row per rule window</td><td>date-valid discount application</td></tr>
+          <tr><td>Customer</td><td><span class="mono">customer_key</span></td><td>1 row per customer in dim</td><td>customer-level behavior and repeat analysis</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">Modeling consequence: split into <span class="mono">fct_order</span> and <span class="mono">fct_order_item</span> was mandatory to avoid metric distortion.</div>
+    </section>
+
+    <section class="slide">
+      <h2>4) End-to-End Data Lineage (Raw → Mart)</h2>
+      <h3>Item pipeline</h3>
+      <div class="flow">
+        <span class="node">raw.item_logs</span><span class="arrow">→</span>
+        <span class="node">stg_wolt_item_logs</span><span class="arrow">→</span>
+        <span class="node">int_wolt_item_logs_curated_deduped</span><span class="arrow">→</span>
+        <span class="node">int_wolt_item_scd2</span><span class="arrow">→</span>
+        <span class="node">dim_item_history / dim_item_current</span>
+      </div>
+
+      <h3 style="margin-top:14px;">Order pipeline</h3>
+      <div class="flow">
+        <span class="node">raw.purchase_logs</span><span class="arrow">→</span>
+        <span class="node">stg_wolt_purchase_logs</span><span class="arrow">→</span>
+        <span class="node">int_wolt_purchase_logs_curated_filtered</span><span class="arrow">→</span>
+        <span class="node">stg_wolt_order_items</span><span class="arrow">→</span>
+        <span class="node">int_wolt_order_items_with_item_price</span><span class="arrow">→</span>
+        <span class="node">int_wolt_order_items_with_price_then_promo</span><span class="arrow">→</span>
+        <span class="node">fct_order_item + fct_order</span>
+      </div>
+
+      <h3 style="margin-top:14px;">Promo pipeline</h3>
+      <div class="flow">
+        <span class="node">raw.promos</span><span class="arrow">→</span>
+        <span class="node">stg_wolt_promos</span><span class="arrow">→</span>
+        <span class="node">dim_promo</span><span class="arrow">→</span>
+        <span class="node">join in item pricing flow by Berlin date window</span>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>5) Why SCD2 for Item Dimension</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Business requirement</h3>
+          <ul>
+            <li>Item attributes (price, category, name, brand) can change over time.</li>
+            <li>Orders must be evaluated with the item state valid at order time.</li>
+            <li>Without SCD2, historical analyses become inaccurate.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>SCD2 behavior</h3>
+          <ul>
+            <li>Each change creates a new version with <span class="mono">valid_from_utc</span>.</li>
+            <li>Previous version closes with <span class="mono">valid_to_utc</span>.</li>
+            <li><span class="mono">is_current</span> identifies latest active version.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">Defensive fallback kept in pricing join (QUALIFY tie-break) for rare edge cases, even though SCD2 overlap checks are enforced by tests.</div>
+    </section>
+
+    <section class="slide">
+      <h2>6) Complete Model Structure (tables and key columns)</h2>
+      <p class="small">Full dbt schema has all documented fields; this slide shows core published structure and business-critical columns.</p>
+
+      <details open>
+        <summary>Core Facts</summary>
+        <ul>
+          <li><span class="mono">fct_order</span>: order_sk, purchase_key, customer_sk, customer_key, order_ts_utc, order_ts_berlin, order_date, fees, basket values, promo flags, customer_order_number.</li>
+          <li><span class="mono">fct_order_item</span>: order_item_sk, order_sk, item_key_sk, item_scd_sk, item_key, item_category, item names, price/discount/final amounts, units, promo indicators.</li>
+        </ul>
+      </details>
+
+      <details>
+        <summary>Core Dimensions</summary>
+        <ul>
+          <li><span class="mono">dim_item_history</span>: item_scd_sk, item_key_sk, item_key, log_item_id, valid_from_utc, valid_to_utc, category/name/brand, price, vat.</li>
+          <li><span class="mono">dim_item_current</span>: item_key_sk, current item attributes and current SCD pointer.</li>
+          <li><span class="mono">dim_promo</span>: promo_sk, item_key_sk, promo_start_date, promo_end_date, promo_type, discount_pct.</li>
+          <li><span class="mono">dim_customer</span>: customer_sk, customer_key, first/last order timestamps, lifetime counters.</li>
+          <li><span class="mono">dim_date</span>: date day attributes for reporting calendar.</li>
+        </ul>
+      </details>
+
+      <details>
+        <summary>Reporting Layer (key marts)</summary>
+        <ul>
+          <li>Category: monthly scorecards, long KPI tables, MoM tables, daypart behavior.</li>
+          <li>Products: monthly product KPIs, top-10 star product table.</li>
+          <li>Cross-sell: category pairs and product pairs (support/confidence/lift).</li>
+          <li>Promo behavior: first-order promo flags, promo/non-promo spend and units.</li>
+        </ul>
+      </details>
+    </section>
+
+    <section class="slide">
+      <h2>7) Incremental Loading Strategy and Watermarks</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Where incremental is used</h3>
+          <ul>
+            <li>Curated log/event-heavy intermediates and selected reporting marts.</li>
+            <li>Key incremental windows use watermark-based lower bound.</li>
+            <li>Lookback is configurable: <span class="mono">incremental_lookback_days</span>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Why this avoids full scans</h3>
+          <ul>
+            <li>Reads only new/late records after latest processed watermark minus safety window.</li>
+            <li>Prevents expensive full re-read on large log tables each run.</li>
+            <li>Supports reproducible corrective backfill when required.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">This design keeps daily runs fast while preserving correctness for late-arriving events.</div>
+    </section>
+
+    <section class="slide">
+      <h2>8) Why Weekly Full/Deep Backfill (30 days) Exists</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Problem solved</h3>
+          <ul>
+            <li>Late events beyond normal lookback may be missed in daily incrementals.</li>
+            <li>Upstream corrections can arrive significantly delayed.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Solution</h3>
+          <ul>
+            <li>Scheduled deeper reprocessing window (e.g., last 30 days weekly).</li>
+            <li>Captures delayed changes while still cheaper than full-history refresh.</li>
+            <li>Balances cost and data correctness.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="small">Escalation path remains available: full refresh or targeted corrective publish for incidents.</p>
+    </section>
+
+    <section class="slide">
+      <h2>9) Dev and Prod Safety Design</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Two-stage orchestration</h3>
+          <ul>
+            <li>Run dev pipeline first.</li>
+            <li>If dev tests fail, do not trigger prod pipeline.</li>
+            <li>If dev passes, trigger prod run.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Why this matters</h3>
+          <ul>
+            <li>Protects production from known broken data/model states.</li>
+            <li>Prevents propagation of failing quality checks.</li>
+            <li>Supports confidence in daily automated refreshes.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">Dagster is used as the control layer for sequencing and status visibility.</div>
+    </section>
+
+    <section class="slide">
+      <h2>10) Quality Checks: What, Where, and Why</h2>
+      <table>
+        <thead>
+          <tr><th>Area</th><th>Example checks</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Core integrity</td><td>not_null, unique, relationships</td><td>prevent key/data contract breaks</td></tr>
+          <tr><td>Historical correctness</td><td>no overlapping SCD2 windows</td><td>valid time-travel joins</td></tr>
+          <tr><td>Financial consistency</td><td>order-item reconciliation, value bounds, non-negative checks</td><td>avoid distorted revenue/discount reporting</td></tr>
+          <tr><td>Promo correctness</td><td>promo windows and discount validity</td><td>correct promo application logic</td></tr>
+          <tr><td>Pipeline observability</td><td>row-flow audits, curation summaries, issue detail marts</td><td>explain row losses/additions with reason codes</td></tr>
+        </tbody>
+      </table>
+      <p class="small">Tests run in dbt build; audit reports provide explainability and ongoing monitoring.</p>
+    </section>
+
+    <section class="slide">
+      <h2>11) Task 1 Chapter Flow (Linear, Source by Source)</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Chapter A: Item Log Chain</h3>
+          <ul>
+            <li><span class="mono">raw.item_logs → stg_wolt_item_logs</span></li>
+            <li><span class="mono">→ int_wolt_item_logs_curated_deduped</span></li>
+            <li><span class="mono">→ int_wolt_item_scd2</span></li>
+            <li><span class="mono">→ dim_item_history + dim_item_current</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Chapter B/C: Purchases + Promos</h3>
+          <ul>
+            <li>Purchase/order chain from raw to both facts</li>
+            <li>Promo chain from raw to dimension + order-item attach</li>
+            <li>Then edge cases, controls, and Task 1 question mapping</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">This order avoids jumping between end-state facts and earlier staging logic.</div>
+    </section>
+
+    <section class="slide">
+      <h2>11A) Full Lineage - Item Logs (Raw → Staging → Curated → SCD2 → Dims)</h2>
+      <table>
+        <thead>
+          <tr><th>Step</th><th>What happens</th><th>Filters / conditions</th><th>Why this exists</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>raw.item_logs</td>
+            <td>Landing source events as-is</td>
+            <td>None</td>
+            <td>Preserve source fidelity for reproducibility and audits</td>
+          </tr>
+          <tr>
+            <td>stg_wolt_item_logs</td>
+            <td>Safe parse timestamp/json, extract names/category/brand/price/vat</td>
+            <td><span class="mono">safe.parse_timestamp</span>, <span class="mono">safe.parse_json</span>, preferred-name fallback <span class="mono">en → de</span></td>
+            <td>Source conformance with minimal transformation</td>
+          </tr>
+          <tr>
+            <td>int_wolt_item_logs_curated_deduped</td>
+            <td>Build trusted event stream</td>
+            <td>
+              keep only valid event-time rows;<br/>
+              dedup <span class="mono">log_item_id</span> by best record;<br/>
+              resolve conflicts for same <span class="mono">item_key + time_log_created_utc</span>;<br/>
+              keep positive non-null price only
+            </td>
+            <td>Eliminate malformed/duplicate/conflicting events before history building</td>
+          </tr>
+          <tr>
+            <td>int_wolt_item_scd2</td>
+            <td>Keep only real change events and build validity windows</td>
+            <td>state-hash change detection; <span class="mono">lead()</span> for <span class="mono">valid_to</span>; open-end current record</td>
+            <td>Historical correctness for order-time item attributes</td>
+          </tr>
+          <tr>
+            <td>dim_item_history / dim_item_current</td>
+            <td>Publish history and current snapshots</td>
+            <td><span class="mono">is_current</span> split for current dimension</td>
+            <td>Support both historical and latest-state analytics use cases</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        Example edge case handled: same business state republished under different log IDs/times is not duplicated as a new SCD2 state.
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>11B) Full Lineage - Purchases/Orders (Raw → Facts)</h2>
+      <table>
+        <thead>
+          <tr><th>Step</th><th>What happens</th><th>Filters / conditions</th><th>Why this exists</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>raw.purchase_logs</td>
+            <td>Landing source orders</td>
+            <td>None</td>
+            <td>Single source of truth for delivered orders</td>
+          </tr>
+          <tr>
+            <td>stg_wolt_purchase_logs</td>
+            <td>Parse order timestamp and produce UTC + Berlin dates</td>
+            <td>safe timestamp parse; cast fee/value fields; parse basket JSON</td>
+            <td>Berlin-local business analysis and clean typed source layer</td>
+          </tr>
+          <tr>
+            <td>int_wolt_purchase_logs_curated_filtered</td>
+            <td>Curated purchase stream with incremental cutoff</td>
+            <td><span class="mono">time_order_received_utc is not null</span>; watermark cutoff in incremental runs</td>
+            <td>Avoid full scans and keep only valid event-time orders</td>
+          </tr>
+          <tr>
+            <td>stg_wolt_order_items</td>
+            <td>Explode basket JSON to item grain</td>
+            <td><span class="mono">item_key is not null</span>, <span class="mono">item_count &gt; 0</span>, aggregate duplicate item_key per order</td>
+            <td>Create reliable order-item grain and prevent duplication drift</td>
+          </tr>
+          <tr>
+            <td>int_wolt_order_items_with_item_price</td>
+            <td>Join each order-item to item SCD2 at event time</td>
+            <td><span class="mono">valid_from &lt;= order_ts &lt; valid_to</span>; defensive QUALIFY tie-break</td>
+            <td>Correct historical pricing and stable row cardinality</td>
+          </tr>
+          <tr>
+            <td>int_wolt_order_items_with_price_then_promo</td>
+            <td>Apply promo on top of historical price</td>
+            <td>Berlin date-window join: start inclusive, end exclusive; <span class="mono">promo_rank=1</span></td>
+            <td>Assignment-aligned promo semantics and one row per order-item</td>
+          </tr>
+          <tr>
+            <td>fct_order_item + fct_order</td>
+            <td>Publish item-grain and order-grain facts</td>
+            <td>incremental cutoff by order_ts; order rollups and customer sequence</td>
+            <td>Serve Task 1 and Task 2 without grain confusion</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <h2>11C) Full Lineage - Promos and Customer Layer (Raw → Dims/Behavior)</h2>
+      <table>
+        <thead>
+          <tr><th>Step</th><th>What happens</th><th>Filters / conditions</th><th>Why this exists</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>raw.promos → stg_wolt_promos</td>
+            <td>Type promo dates and discount pct</td>
+            <td>safe date parse and integer discount cast</td>
+            <td>Reliable promo window arithmetic</td>
+          </tr>
+          <tr>
+            <td>dim_promo</td>
+            <td>Create surrogate promo key and map item key key-space</td>
+            <td>promo_sk hash over item + window + type + discount</td>
+            <td>Stable dimensional join target for facts/reports</td>
+          </tr>
+          <tr>
+            <td>fct_order_item promo attach</td>
+            <td>Attach promo to order-item by Berlin business date</td>
+            <td><span class="mono">order_date_berlin &gt;= promo_start</span> and <span class="mono">&lt; promo_end</span></td>
+            <td>Exactly follows assignment promo validity definition</td>
+          </tr>
+          <tr>
+            <td>dim_customer</td>
+            <td>Aggregate customer lifecycle from fct_order</td>
+            <td>first/last order, lifetime orders/value, promo order counts</td>
+            <td>Task 1 repeat behavior + Task 2 promo acquisition context</td>
+          </tr>
+          <tr>
+            <td>rpt_customer_promo_behavior</td>
+            <td>Customer-level promo behavior and first-order flags</td>
+            <td>first-order flags, promo/non-promo units and value, Berlin trend field</td>
+            <td>Directly answers Task 2 Q5</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <h2>11D) Task 1 Challenges Faced and How They Were Fixed</h2>
+      <table>
+        <thead>
+          <tr><th>Challenge / edge case</th><th>Risk</th><th>Fix implemented</th><th>Validation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Null/invalid event timestamps in logs</td>
+            <td>Broken chronology and SCD windows</td>
+            <td>Exclude null event-time in curated layer</td>
+            <td>Curation audit summary + consistency test</td>
+          </tr>
+          <tr>
+            <td>Multiple rows for same log_item_id / same item+time</td>
+            <td>Duplicate versions and duplicated fact rows</td>
+            <td>Deterministic dedup + conflict resolution ranking</td>
+            <td>No-duplicate timestamp test in curated</td>
+          </tr>
+          <tr>
+            <td>No-op republished item events</td>
+            <td>History bloat and fake changes</td>
+            <td>State-hash change detection before SCD2 generation</td>
+            <td>No consecutive identical SCD state test</td>
+          </tr>
+          <tr>
+            <td>Potential SCD overlap anomalies</td>
+            <td>Ambiguous price lookup at order time</td>
+            <td>Overlap tests + defensive QUALIFY in pricing join</td>
+            <td>Overlap test + row-count flow audit</td>
+          </tr>
+          <tr>
+            <td>Purchase arrives before item history update</td>
+            <td>Unmatched item_key/item_scd in order-item</td>
+            <td>Warning-level monitor + backfill policy (not hard-stop)</td>
+            <td>Item mapping warning test + audit summaries</td>
+          </tr>
+          <tr>
+            <td>Promo overlaps/invalid rules</td>
+            <td>Double discounts or invalid promo assignment</td>
+            <td>Promo window validity + overlap checks</td>
+            <td>Promo tests + coverage audits</td>
+          </tr>
+          <tr>
+            <td>Modeled totals differ from raw purchase totals</td>
+            <td>Financial trust loss</td>
+            <td>Per-order reconciliation with strict tolerance</td>
+            <td>Derived-vs-raw reconciliation test</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <h2>11E) Task 1 Output Mapping: How the 8 Questions Are Answered</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Mostly from <span class="mono">fct_order</span></h3>
+          <ul>
+            <li>Service area (distance distributions)</li>
+            <li>Fee vs basket ratios</li>
+            <li>Revenue components at order level</li>
+            <li>Courier cost totals</li>
+            <li>Return behavior (first vs repeat orders)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Mostly from <span class="mono">fct_order_item</span></h3>
+          <ul>
+            <li>Items bought and selling prices over time</li>
+            <li>Promo item unit volumes</li>
+            <li>Category/product analyses and attach behavior</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">Grain separation avoids repeating order-level financials on item-level rows.</div>
+    </section>
+
+    <section class="slide">
+      <h2>12) Why Lightdash for Task 2</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Tool choice rationale</h3>
+          <ul>
+            <li>Open-source and fast to iterate.</li>
+            <li>Connects directly to BigQuery.</li>
+            <li>Reads dbt model metadata for governed semantics.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Semantic governance</h3>
+          <ul>
+            <li>Metrics exposed in dbt YAML (<span class="mono">meta.metrics</span>).</li>
+            <li>Manifest-backed project sync to Lightdash.</li>
+            <li>Automated parity check ensures explore-model alignment.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="small">Operational commands added to ensure fast and reliable dbt↔Lightdash synchronization.</p>
+    </section>
+
+    <section class="slide">
+      <h2>13) Task 2 Dashboard Chapter Map</h2>
+      <table>
+        <thead><tr><th>Tab (chapter)</th><th>Main question answered</th><th>Primary report models</th></tr></thead>
+        <tbody>
+          <tr><td>KPI Definitions</td><td>How each KPI is defined</td><td>Markdown reference tile</td></tr>
+          <tr><td>Categories</td><td>Which categories are better/worse and why</td><td>rpt_category_monthly_kpi_long, rpt_category_monthly_kpi_long_mom, rpt_category_overall_scorecard</td></tr>
+          <tr><td>Star Products</td><td>Who are star products and contribution risk</td><td>rpt_star_products_top10_overall</td></tr>
+          <tr><td>Basket & Cross-Sell</td><td>What gets bought together beyond chance</td><td>rpt_cross_sell_category_pairs, rpt_cross_sell_product_pairs</td></tr>
+          <tr><td>Category Time Behavior</td><td>How users consume categories by time windows</td><td>rpt_category_daypart_monthly</td></tr>
+          <tr><td>Promo Behavior</td><td>First-time promo acquisition and promo-only behavior</td><td>rpt_customer_promo_behavior (+ 2 SQL charts from same table)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <h2>13B) Task 2 - Complete Tab/Chart Inventory and Insight Intent</h2>
+      <table>
+        <thead><tr><th>Tab</th><th>Charts used</th><th>Primary reports</th><th>Main business insight intent</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Categories</td>
+            <td>Monthly KPI trend, MoM change, overview scorecard, discount dependency, concentration risk</td>
+            <td><span class="mono">rpt_category_monthly_kpi_long</span>, <span class="mono">rpt_category_monthly_kpi_long_mom</span>, <span class="mono">rpt_category_overall_scorecard</span></td>
+            <td>Rank category health and diagnose whether growth/decline is volume, pricing, discount, or concentration-driven.</td>
+          </tr>
+          <tr>
+            <td>Star Products</td>
+            <td>Top-10 product leaderboard with hero markers</td>
+            <td><span class="mono">rpt_star_products_top10_overall</span></td>
+            <td>Identify revenue engines and concentration risk at SKU level.</td>
+          </tr>
+          <tr>
+            <td>Basket & Cross-Sell</td>
+            <td>Category pair matrix, product pair matrix</td>
+            <td><span class="mono">rpt_cross_sell_category_pairs</span>, <span class="mono">rpt_cross_sell_product_pairs</span></td>
+            <td>Find actionable affinity pairs beyond popularity-driven overlap.</td>
+          </tr>
+          <tr>
+            <td>Category Time Behavior</td>
+            <td>Daypart/month/weekday charts for units and revenue</td>
+            <td><span class="mono">rpt_category_daypart_monthly</span></td>
+            <td>See when each category is consumed and when monetization is strongest.</td>
+          </tr>
+          <tr>
+            <td>Promo Behavior</td>
+            <td>First-order promo share, promo-only share, mix charts, monthly rates and new-customer trend</td>
+            <td><span class="mono">rpt_customer_promo_behavior</span> (+2 SQL charts on same report)</td>
+            <td>Measure promo-acquisition quality and promo dependence over time.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <h2>14) Task 2 - Categories Tab (Q1 + Q2) Deep Detail</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Charts and reports used</h3>
+          <ul>
+            <li><b>Category Monthly Metric Performance</b> → <span class="mono">rpt_category_monthly_kpi_long</span></li>
+            <li><b>Category MOM Performance Change</b> → <span class="mono">rpt_category_monthly_kpi_long_mom</span></li>
+            <li><b>Category Metric Overview</b> → <span class="mono">rpt_category_overall_scorecard</span></li>
+            <li><b>Category Discount Dependency</b> → <span class="mono">rpt_category_overall_scorecard</span></li>
+            <li><b>Category Product Concentration Risk</b> → <span class="mono">rpt_category_overall_scorecard</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>How to interpret</h3>
+          <ul>
+            <li>Start with overview table for scale + penetration + monetization.</li>
+            <li>Use MoM view to detect direction and pace of change by metric.</li>
+            <li>Use discount and concentration charts to diagnose the “why”.</li>
+            <li>Read data note for category-change caveat before final conclusion.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">This tab answers both “who performs best” and “what is going wrong in weak categories”.</div>
+    </section>
+
+    <section class="slide">
+      <h2>15) Business Findings - Categories (Q1, Q2)</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Observed pattern</h3>
+          <ul>
+            <li>Crisp & Snacks shows strongest broad-based franchise behavior.</li>
+            <li>Chocolate is very strong monetization-wise.</li>
+            <li>Some apparent category movement is a historical category-change effect.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Critical caveat</h3>
+          <ul>
+            <li>Tony's Brownie appears in two categories over time.</li>
+            <li>Other Confectionary until 2023-08-07.</li>
+            <li>Chocolate from 2023-08-08 onward.</li>
+            <li>This materially affects category trend comparisons.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">Interpretation rule: distinguish true demand change from master-data classification shift.</div>
+    </section>
+
+    <section class="slide">
+      <h2>16) Task 2 - Star Products Tab (Q1) Deep Detail</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Chart/report used</h3>
+          <ul>
+            <li><b>Star Products</b> table → <span class="mono">rpt_star_products_top10_overall</span></li>
+            <li>Columns include rank, product, brand, revenue, share, units, orders, customers, ASP, discount%, hero flag.</li>
+            <li>Markdown tile defines exact ranking rule and hero logic.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Business read</h3>
+          <ul>
+            <li>Revenue ranking identifies commercial winners.</li>
+            <li>Share + reach metrics show concentration risk.</li>
+            <li>ASP + discount% explain monetization quality vs discount dependence.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>17) Business Findings - Star Products (Q1)</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Method</h3>
+          <ul>
+            <li>Top 10 ranked by gross revenue contribution.</li>
+            <li>Top 2 flagged as HERO products.</li>
+            <li>Diagnostics: units, orders, customers, ASP, discount dependency.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Story</h3>
+          <ul>
+            <li>Business is concentrated in a few hero SKUs.</li>
+            <li>Concentration risk exists; resilience requires secondary stars.</li>
+            <li>Discount quality and customer reach must be monitored by product.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>18) Task 2 - Basket & Cross-Sell Tab (Q3) Deep Detail</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Charts/reports used</h3>
+          <ul>
+            <li><b>Category-Level Co-Purchase Matrix</b> → <span class="mono">rpt_cross_sell_category_pairs</span></li>
+            <li><b>Top Product Pairs by Lift</b> → <span class="mono">rpt_cross_sell_product_pairs</span></li>
+            <li>Both include support, confidence, lift; category report also includes expected pair orders and delta vs expected.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Decision logic</h3>
+          <ul>
+            <li>Prioritize high-lift + meaningful-support pairs for bundles.</li>
+            <li>Use expected baseline to avoid “popularity illusion”.</li>
+            <li>Treat lift&lt;1 with care (possible substitution/cannibalization).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>19) Business Findings - Basket & Cross-Sell (Q3)</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Framework</h3>
+          <ul>
+            <li>Support(A,B)</li>
+            <li>Confidence(A→B), Confidence(B→A)</li>
+            <li>Lift(A,B)</li>
+            <li>Expected pair orders under independence</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Why expected baseline was added</h3>
+          <ul>
+            <li>High pair counts can occur purely due to popularity.</li>
+            <li>Expected-vs-actual delta separates real affinity from coincidental overlap.</li>
+            <li>Actionability buckets improve decision quality.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">Action focus: bundle high-lift + meaningful-support pairs; avoid substitute-pattern pairs.</div>
+    </section>
+
+    <section class="slide">
+      <h2>20) Task 2 - Category Time Behavior Tab (Q4) Deep Detail</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>All six charts come from one report</h3>
+          <ul>
+            <li>Source: <span class="mono">rpt_category_daypart_monthly</span></li>
+            <li>Daypart charts: dimensions <span class="mono">daypart_berlin, item_category</span></li>
+            <li>Month charts: dimensions <span class="mono">order_month, item_category</span></li>
+            <li>Weekday charts: dimensions <span class="mono">day_of_week_berlin, item_category</span></li>
+            <li>Measures: only <span class="mono">units_sold</span> and <span class="mono">revenue_eur</span> (additive, aggregation-safe).</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Why this model design</h3>
+          <ul>
+            <li>One unified time behavior source avoids inconsistent chart logic.</li>
+            <li>Removed non-additive precomputed rates to avoid wrong re-aggregation in BI.</li>
+            <li>Berlin-local dimensions are business-aligned for action planning.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>21) Business Findings - Category Time Behavior (Q4)</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Model and dimensions</h3>
+          <ul>
+            <li>Single source report: <span class="mono">rpt_category_daypart_monthly</span>.</li>
+            <li>Berlin-local dimensions: daypart, weekday, order hour, month.</li>
+            <li>Core additive metrics only: units_sold, revenue_eur.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Interpretation</h3>
+          <ul>
+            <li>Compare unit-heavy windows vs revenue-heavy windows.</li>
+            <li>Identify daypart-seasonality and weekday patterns per category.</li>
+            <li>Use outputs for promo timing and inventory scheduling.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>22) Task 2 - Promo Behavior Tab (Q5) Deep Detail</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Charts/reports used</h3>
+          <ul>
+            <li>Semantic charts from <span class="mono">rpt_customer_promo_behavior</span>:
+              first-order promo share, promo-only first-order share, promo-only vs mixed, monthly rates and monthly new customers.
+            </li>
+            <li>2 SQL charts on same report:
+              promo vs non-promo value, and promo vs non-promo units.
+            </li>
+            <li>Monthly trend uses <span class="mono">first_order_ts_berlin</span> (not UTC) for business interpretation.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Interpretation framework</h3>
+          <ul>
+            <li>Acquisition: how many first-time customers include promos?</li>
+            <li>Quality: are first orders fully promo-only or mixed?</li>
+            <li>Persistence: does lifetime behavior remain promo-dependent?</li>
+            <li>Trend: is promo acquisition improving or declining month-over-month?</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>23) Business Findings - Promo Behavior (Q5)</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>What is measured</h3>
+          <ul>
+            <li>Share of customers with promo in first order.</li>
+            <li>Share with promo-only first order.</li>
+            <li>Promo-only vs mixed lifetime customer behavior.</li>
+            <li>Promo vs non-promo value and units mix.</li>
+            <li>Monthly promo acquisition rates using <span class="mono">first_order_ts_berlin</span>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Interpretation principle</h3>
+          <ul>
+            <li>Low promo-first-order share does not mean promos have no value.</li>
+            <li>It means promos are not the only acquisition channel.</li>
+            <li>Cohort follow-up is needed: repeat rate and non-promo conversion after acquisition.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>24) Assumptions and Tradeoffs</h2>
+      <ul>
+        <li>Facts are latest-state unless an explicit snapshot/versioning need exists.</li>
+        <li>Promo rules are assumed to be represented as new records when changed.</li>
+        <li>Berlin business interpretation is preferred over UTC for business trend charts.</li>
+        <li>Incremental pipelines prioritize daily efficiency; weekly deeper backfill handles late-arrival risk.</li>
+        <li>Task 1 SQL dashboard uses core facts directly; Task 2 uses reporting marts for focused business narratives.</li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <h2>25) What I Built Beyond Basic SQL</h2>
+      <div class="grid3">
+        <div class="card">
+          <h3>Reliability</h3>
+          <p class="status-ok">✓</p>
+          <ul>
+            <li>Comprehensive tests in core + custom assertions.</li>
+            <li>Audit marts for data quality and row-flow diagnostics.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Scalability</h3>
+          <p class="status-ok">✓</p>
+          <ul>
+            <li>Incremental + watermark processing.</li>
+            <li>Configurable lookbacks and corrective backfills.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Governance</h3>
+          <p class="status-ok">✓</p>
+          <ul>
+            <li>dbt semantic metadata synced to Lightdash.</li>
+            <li>Automated alignment checker for dbt vs Lightdash parity.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>26) Recommendations for Business and Data Team</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>Business actions</h3>
+          <ol>
+            <li>Protect top-performing broad categories while reducing hero-SKU concentration risk.</li>
+            <li>Prioritize high-lift cross-sell pairs for bundle tests.</li>
+            <li>Schedule category promos by Berlin daypart and weekday strength.</li>
+            <li>Measure promo-acquired cohort quality beyond first order.</li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3>Data/Platform actions</h3>
+          <ol>
+            <li>Add margin/COGS to move from revenue to profitability optimization.</li>
+            <li>Keep automated anomaly controls and thresholds in audit layer.</li>
+            <li>Retain dev→prod promotion gating in orchestration.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <h2>27) Appendix - Reproducibility and Operational Commands</h2>
+      <div class="card">
+        <p class="mono">./scripts/dbt.sh build --target dev --select marts.core marts.reporting</p>
+        <p class="mono">make lightdash-connect-semantic</p>
+        <p class="mono">make lightdash-verify-alignment</p>
+        <p class="mono">make dbt-sync-lightdash-fast MODEL=&lt;dbt_selector&gt;</p>
+        <p class="mono">make dbt-sync-lightdash-dev</p>
+      </div>
+      <p class="small">This ensures data model, BI semantic layer, and dashboard fields remain aligned after every change.</p>
+    </section>
+
+  </main>
+
+  <script>
+    let idx = 0;
+    let showAll = false;
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const counter = document.getElementById('counter');
+
+    function render() {
+      slides.forEach((s, i) => s.classList.toggle('active', showAll || i === idx));
+      counter.textContent = showAll ? `Showing all ${slides.length} slides` : `Slide ${idx + 1} / ${slides.length}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function nextSlide() { if (!showAll) { idx = Math.min(idx + 1, slides.length - 1); render(); } }
+    function prevSlide() { if (!showAll) { idx = Math.max(idx - 1, 0); render(); } }
+    function toggleAll() { showAll = !showAll; render(); }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') nextSlide();
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevSlide();
+      if (e.key.toLowerCase() === 'a') toggleAll();
+    });
+
+    render();
+  </script>
+</body>
+</html>

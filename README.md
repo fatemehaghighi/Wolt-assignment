@@ -9,7 +9,7 @@ Production-style analytics engineering project for Wolt assignment on BigQuery +
 - `staging`: source-conformed models only (typing, renaming, JSON parsing)
 - `intermediate`: curation, incremental watermarking, SCD2, pricing and promo logic
 - `marts/core`: dimensions + facts for BI consumption
-- `marts/reporting`: assignment-ready analytical outputs as daily snapshots (`snapshot_date`)
+- `marts/reporting`: assignment-ready analytical outputs (category daily/monthly are latest-state by date grain)
 
 ## BigQuery Schema Layout
 
@@ -30,7 +30,7 @@ Objects are separated by layer into dedicated datasets for cleaner navigation an
 Keeping these grains separate avoids metric duplication and simplifies joins.
 Order facts expose both UTC and Berlin-local time fields (`order_ts_utc`, `order_ts_berlin`, `order_hour_utc`, `order_hour_berlin`).
 
-`fct_order` is intentionally modeled as a latest-state (restatable) fact table. If late/corrected source events arrive, existing `fct_order` rows can be updated by incremental merge. Historical replay is provided at reporting layer via daily `snapshot_date` snapshots; deeper order-change history can be added later with dedicated snapshot/change-log models.
+`fct_order` is intentionally modeled as a latest-state (restatable) fact table. If late/corrected source events arrive, existing `fct_order` rows can be updated by incremental merge. Category reporting models are also latest-state by their date grain; deeper replay can be added later with dedicated snapshot/change-log models.
 
 ## Promo Logic (Task 2)
 
@@ -93,6 +93,7 @@ Expected artifacts:
 - `outputs/task1_orders.csv`
 - `outputs/task1_order_items.csv`
 - `outputs/task2_category_growth_metrics.csv`
+- `outputs/task2_category_monthly_growth_metrics.csv`
 - `outputs/task2_customer_promo_behavior.csv`
 - `outputs/task2_item_pair_affinity.csv`
 - `presentation/wolt_assignment.pdf`
@@ -187,6 +188,18 @@ Stop it:
 
 ```bash
 make lightdash-down
+```
+
+Performance/stability guardrails:
+
+```bash
+make lightdash-doctor
+```
+
+Safe maintenance (keeps dashboards/metadata volumes, prunes only unused Docker artifacts):
+
+```bash
+make lightdash-maintain
 ```
 
 Lightdash dashboard behavior in this repo:

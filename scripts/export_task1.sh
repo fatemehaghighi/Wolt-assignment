@@ -43,9 +43,9 @@ bq --project_id="${DBT_BQ_DEV_PROJECT}" query \
       promo_order_item_rows_in_order,
       promo_units_in_order,
       has_any_promo_units_in_order,
-      modeled_order_items_base_amount_gross_eur,
-      modeled_order_items_discount_amount_gross_eur,
-      modeled_order_items_final_amount_gross_eur,
+      derived_order_items_base_amount_gross_eur,
+      derived_order_items_discount_amount_gross_eur,
+      derived_order_items_final_amount_gross_eur,
       customer_order_number,
       is_first_order_for_customer
     from \`${DBT_BQ_DEV_PROJECT}.${DBT_BQ_DEV_DATASET}_core.fct_order\`

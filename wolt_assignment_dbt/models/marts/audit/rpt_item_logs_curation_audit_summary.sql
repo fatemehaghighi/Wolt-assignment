@@ -18,7 +18,7 @@ curated_totals as (
         count(*) as curated_row_count,
         count(distinct log_item_id) as curated_distinct_log_item_id_count,
         count(distinct item_key) as curated_distinct_item_key_count
-    from {{ ref('int_wolt_item_logs_curated') }}
+    from {{ ref('int_wolt_item_logs_curated_deduped') }}
 ),
 scd2_totals as (
     select

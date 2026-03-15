@@ -11,10 +11,53 @@ semantic_models:
         type: foreign
         expr: customer_sk
     dimensions:
+      - name: order_sk
+        type: categorical
+        expr: order_sk
+      - name: customer_sk
+        type: categorical
+        expr: customer_sk
       - name: order_date
         type: time
+        expr: order_date
         type_params:
           time_granularity: day
+      - name: order_date_utc
+        type: time
+        expr: order_date_utc
+        type_params:
+          time_granularity: day
+      - name: order_ts_utc
+        type: time
+        expr: order_ts_utc
+        type_params:
+          time_granularity: hour
+      - name: order_ts_berlin
+        type: time
+        expr: order_ts_berlin
+        type_params:
+          time_granularity: hour
+      - name: purchase_key
+        type: categorical
+        expr: purchase_key
+      - name: customer_key
+        type: categorical
+        expr: customer_key
+      - name: order_hour_utc
+        type: categorical
+        expr: order_hour_utc
+      - name: order_hour_berlin
+        type: categorical
+        expr: order_hour_berlin
+      - name: order_day_name
+        type: categorical
+        expr: order_day_name
+      - name: customer_order_number
+        type: categorical
+        expr: customer_order_number
+      - name: is_first_order_for_customer
+        type: categorical
+        expr: is_first_order_for_customer
       - name: has_any_promo_units_in_order
         type: categorical
         expr: has_any_promo_units_in_order
@@ -22,6 +65,9 @@ semantic_models:
       - name: order_count
         agg: count
         expr: order_sk
+      - name: avg_delivery_distance_line_meters
+        agg: average
+        expr: delivery_distance_line_meters
       - name: total_basket_value_eur
         agg: sum
         expr: total_basket_value_eur
@@ -31,6 +77,33 @@ semantic_models:
       - name: total_courier_base_fee_eur
         agg: sum
         expr: courier_base_fee_eur
+      - name: basket_plus_service_fee_eur
+        agg: sum
+        expr: basket_plus_service_fee_eur
+      - name: total_customer_paid_eur
+        agg: sum
+        expr: total_customer_paid_eur
+      - name: total_units_in_order
+        agg: sum
+        expr: total_units_in_order
+      - name: distinct_order_item_rows_in_order
+        agg: sum
+        expr: distinct_order_item_rows_in_order
+      - name: promo_order_item_rows_in_order
+        agg: sum
+        expr: promo_order_item_rows_in_order
+      - name: promo_units_in_order
+        agg: sum
+        expr: promo_units_in_order
+      - name: derived_order_items_base_amount_gross_eur
+        agg: sum
+        expr: derived_order_items_base_amount_gross_eur
+      - name: derived_order_items_discount_amount_gross_eur
+        agg: sum
+        expr: derived_order_items_discount_amount_gross_eur
+      - name: derived_order_items_final_amount_gross_eur
+        agg: sum
+        expr: derived_order_items_final_amount_gross_eur
 
   - name: sm_order_item
     model: ref('fct_order_item')
@@ -43,28 +116,286 @@ semantic_models:
       - name: order
         type: foreign
         expr: order_sk
+      - name: customer
+        type: foreign
+        expr: customer_sk
       - name: item
         type: foreign
         expr: item_key_sk
     dimensions:
+      - name: purchase_key
+        type: categorical
+        expr: purchase_key
+      - name: customer_key
+        type: categorical
+        expr: customer_key
+      - name: customer_sk
+        type: categorical
+        expr: customer_sk
+      - name: item_key
+        type: categorical
+        expr: item_key
+      - name: item_scd_sk
+        type: categorical
+        expr: item_scd_sk
+      - name: promo_sk
+        type: categorical
+        expr: promo_sk
       - name: order_date
         type: time
+        expr: order_date
         type_params:
           time_granularity: day
+      - name: order_date_utc
+        type: time
+        expr: order_date_utc
+        type_params:
+          time_granularity: day
+      - name: order_ts_utc
+        type: time
+        expr: order_ts_utc
+        type_params:
+          time_granularity: hour
+      - name: item_name_en
+        type: categorical
+        expr: item_name_en
+      - name: item_name_de
+        type: categorical
+        expr: item_name_de
       - name: item_category
         type: categorical
+        expr: item_category
       - name: is_promo_item
         type: categorical
+        expr: is_promo_item
+      - name: item_name_preferred
+        type: categorical
+        expr: item_name_preferred
+      - name: brand_name
+        type: categorical
+        expr: brand_name
     measures:
+      - name: order_item_row_count
+        agg: count
+        expr: order_item_sk
       - name: units_sold
         agg: sum
         expr: units_in_order_item_row
+      - name: item_unit_base_price_gross_eur
+        agg: average
+        expr: item_unit_base_price_gross_eur
+      - name: discount_pct_applied
+        agg: average
+        expr: discount_pct_applied
+      - name: item_unit_discount_amount_gross_eur
+        agg: average
+        expr: item_unit_discount_amount_gross_eur
       - name: line_revenue_eur
         agg: sum
         expr: order_item_row_final_amount_gross_eur
+      - name: line_base_amount_eur
+        agg: sum
+        expr: order_item_row_base_amount_gross_eur
       - name: line_discount_eur
         agg: sum
         expr: order_item_row_discount_amount_gross_eur
+      - name: avg_item_unit_final_price_gross_eur
+        agg: average
+        expr: item_unit_final_price_gross_eur
+      - name: avg_vat_rate_pct
+        agg: average
+        expr: vat_rate_pct
+
+  - name: sm_customer
+    model: ref('dim_customer')
+    defaults:
+      agg_time_dimension: first_order_ts_utc
+    entities:
+      - name: customer
+        type: primary
+        expr: customer_sk
+    dimensions:
+      - name: customer_key
+        type: categorical
+        expr: customer_key
+      - name: first_order_ts_utc
+        type: time
+        expr: first_order_ts_utc
+        type_params:
+          time_granularity: day
+      - name: last_order_ts_utc
+        type: time
+        expr: last_order_ts_utc
+        type_params:
+          time_granularity: day
+      - name: first_order_contains_promo_flag
+        type: categorical
+        expr: first_order_contains_promo_flag
+    measures:
+      - name: customer_count
+        agg: count
+        expr: customer_sk
+      - name: customer_lifetime_orders
+        agg: sum
+        expr: lifetime_orders
+      - name: customer_lifetime_basket_value_eur
+        agg: sum
+        expr: lifetime_basket_value_eur
+      - name: customer_orders_with_promo
+        agg: sum
+        expr: orders_with_promo
+
+  - name: sm_item_current
+    model: ref('dim_item_current')
+    defaults:
+      agg_time_dimension: current_valid_from_utc
+    entities:
+      - name: item
+        type: primary
+        expr: item_key_sk
+    dimensions:
+      - name: item_key
+        type: categorical
+        expr: item_key
+      - name: item_scd_sk
+        type: categorical
+        expr: item_scd_sk
+      - name: item_category
+        type: categorical
+        expr: item_category
+      - name: brand_name
+        type: categorical
+        expr: brand_name
+      - name: item_name_en
+        type: categorical
+        expr: item_name_en
+      - name: item_name_de
+        type: categorical
+        expr: item_name_de
+      - name: item_name_preferred
+        type: categorical
+        expr: item_name_preferred
+      - name: current_valid_from_utc
+        type: time
+        expr: current_valid_from_utc
+        type_params:
+          time_granularity: day
+    measures:
+      - name: item_count_current
+        agg: count
+        expr: item_key_sk
+      - name: avg_current_item_base_price_gross_eur
+        agg: average
+        expr: current_product_base_price_gross_eur
+      - name: avg_current_vat_rate_pct
+        agg: average
+        expr: current_vat_rate_pct
+      - name: avg_number_of_units
+        agg: average
+        expr: number_of_units
+      - name: avg_weight_in_grams
+        agg: average
+        expr: weight_in_grams
+
+  - name: sm_item_history
+    model: ref('dim_item_history')
+    defaults:
+      agg_time_dimension: valid_from_utc
+    entities:
+      - name: item_scd
+        type: primary
+        expr: item_scd_sk
+      - name: item
+        type: foreign
+        expr: item_key_sk
+    dimensions:
+      - name: item_key
+        type: categorical
+        expr: item_key
+      - name: log_item_id
+        type: categorical
+        expr: log_item_id
+      - name: valid_from_utc
+        type: time
+        expr: valid_from_utc
+        type_params:
+          time_granularity: day
+      - name: valid_to_utc
+        type: time
+        expr: valid_to_utc
+        type_params:
+          time_granularity: day
+      - name: time_item_created_in_source_utc
+        type: time
+        expr: time_item_created_in_source_utc
+        type_params:
+          time_granularity: day
+      - name: is_current
+        type: categorical
+        expr: is_current
+      - name: item_category
+        type: categorical
+        expr: item_category
+      - name: brand_name
+        type: categorical
+        expr: brand_name
+      - name: item_name_en
+        type: categorical
+        expr: item_name_en
+      - name: item_name_de
+        type: categorical
+        expr: item_name_de
+      - name: item_name_preferred
+        type: categorical
+        expr: item_name_preferred
+    measures:
+      - name: item_versions_count
+        agg: count
+        expr: item_scd_sk
+      - name: avg_item_base_price_history_gross_eur
+        agg: average
+        expr: product_base_price_gross_eur
+      - name: avg_item_vat_rate_history_pct
+        agg: average
+        expr: vat_rate_pct
+      - name: avg_item_number_of_units_history
+        agg: average
+        expr: number_of_units
+      - name: avg_item_weight_in_grams_history
+        agg: average
+        expr: weight_in_grams
+
+  - name: sm_promo
+    model: ref('dim_promo')
+    defaults:
+      agg_time_dimension: promo_start_date
+    entities:
+      - name: promo
+        type: primary
+        expr: promo_sk
+      - name: item
+        type: foreign
+        expr: item_key_sk
+    dimensions:
+      - name: promo_start_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: promo_end_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: promo_type
+        type: categorical
+      - name: item_key
+        type: categorical
+    measures:
+      - name: promo_rule_count
+        agg: count
+        expr: promo_sk
+      - name: avg_discount_pct
+        agg: average
+        expr: discount_pct
 
 metrics:
   - name: total_orders
@@ -88,6 +419,27 @@ metrics:
       measure:
         name: units_sold
 
+  - name: item_unit_base_price_gross_eur
+    label: Avg Item Unit Base Price Gross (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: item_unit_base_price_gross_eur
+
+  - name: discount_pct_applied
+    label: Avg Discount Pct Applied
+    type: simple
+    type_params:
+      measure:
+        name: discount_pct_applied
+
+  - name: item_unit_discount_amount_gross_eur
+    label: Avg Item Unit Discount Amount Gross (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: item_unit_discount_amount_gross_eur
+
   - name: line_revenue_eur
     label: Line Revenue (EUR)
     type: simple
@@ -101,3 +453,115 @@ metrics:
     type_params:
       measure:
         name: line_discount_eur
+
+  - name: total_customer_paid_eur
+    label: Total Customer Paid (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: total_customer_paid_eur
+
+  - name: total_units_in_order
+    label: Total Units In Order
+    type: simple
+    type_params:
+      measure:
+        name: total_units_in_order
+
+  - name: promo_units_in_order
+    label: Promo Units In Order
+    type: simple
+    type_params:
+      measure:
+        name: promo_units_in_order
+
+  - name: order_item_rows
+    label: Order Item Rows
+    type: simple
+    type_params:
+      measure:
+        name: order_item_row_count
+
+  - name: line_base_amount_eur
+    label: Line Base Amount (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: line_base_amount_eur
+
+  - name: avg_item_unit_final_price_gross_eur
+    label: Avg Item Unit Final Price Gross (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: avg_item_unit_final_price_gross_eur
+
+  - name: customers
+    label: Customers
+    type: simple
+    type_params:
+      measure:
+        name: customer_count
+
+  - name: customer_lifetime_orders
+    label: Customer Lifetime Orders
+    type: simple
+    type_params:
+      measure:
+        name: customer_lifetime_orders
+
+  - name: customer_lifetime_basket_value_eur
+    label: Customer Lifetime Basket Value (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: customer_lifetime_basket_value_eur
+
+  - name: customer_orders_with_promo
+    label: Customer Orders With Promo
+    type: simple
+    type_params:
+      measure:
+        name: customer_orders_with_promo
+
+  - name: item_count_current
+    label: Item Count Current
+    type: simple
+    type_params:
+      measure:
+        name: item_count_current
+
+  - name: avg_current_item_base_price_gross_eur
+    label: Avg Current Item Base Price Gross (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: avg_current_item_base_price_gross_eur
+
+  - name: item_versions_count
+    label: Item Versions Count
+    type: simple
+    type_params:
+      measure:
+        name: item_versions_count
+
+  - name: avg_item_base_price_history_gross_eur
+    label: Avg Item Base Price History Gross (EUR)
+    type: simple
+    type_params:
+      measure:
+        name: avg_item_base_price_history_gross_eur
+
+  - name: promo_rule_count
+    label: Promo Rule Count
+    type: simple
+    type_params:
+      measure:
+        name: promo_rule_count
+
+  - name: avg_discount_pct
+    label: Avg Discount Pct
+    type: simple
+    type_params:
+      measure:
+        name: avg_discount_pct

@@ -298,7 +298,7 @@ sid = subprocess.check_output(
 ).strip()
 
 if not sid:
-    raise SystemExit('No active Lightdash session found. Login at http://localhost:8080 first.')
+    raise SystemExit('No active Lightdash session found. Login at http://localhost:18080 first.')
 
 cookie = signed_cookie(secret, sid)
 session = requests.Session()
@@ -309,7 +309,7 @@ session.headers.update(
     }
 )
 
-base_url = 'http://localhost:8080'
+base_url = 'http://localhost:18080'
 user_resp = session.get(f'{base_url}/api/v1/user', timeout=20)
 user_resp.raise_for_status()
 user = user_resp.json()['results']
@@ -437,22 +437,21 @@ limit 1
             '- High-volume categories drive growth; compare against price trend to spot mix shifts.'
         ),
         'config': {
-            'type': 'vertical_bar',
+            'type': 'table',
             'metadata': {'version': 1},
-            'fieldConfig': {
-                'x': {'type': 'time', 'reference': 'period_month'},
-                'y': [{'aggregation': 'any', 'reference': 'units_sold'}],
-                'groupBy': [{'reference': 'item_category'}],
-                'stack': 'stack',
+            'columns': {
+                'period_month': {'visible': True},
+                'item_category': {'visible': True},
+                'units_sold': {'visible': True},
+                'weighted_avg_unit_selling_price_eur': {'visible': True},
             },
-            'display': {},
         },
         'sql': f"""
 select
   date_trunc(order_date, month) as period_month,
   item_category,
   sum(units_in_order_item_row) as units_sold,
-  safe_divide(sum(order_item_row_final_amount_gross_eur), nullif(sum(units_in_order_item_row), 0)) as avg_unit_selling_price_eur
+  safe_divide(sum(order_item_row_final_amount_gross_eur), nullif(sum(units_in_order_item_row), 0)) as weighted_avg_unit_selling_price_eur
 from `{dev_project}.{dev_dataset}_core.fct_order_item`
 group by 1,2
 order by 1, units_sold desc
@@ -757,10 +756,10 @@ guide_meta = {
         'how_to_use': 'If p90 rises while orders stay stable or grow, coverage radius likely expanded.',
     },
     'task1-items-and-prices-by-month': {
-        'what_it_says': 'Shows how many units each category sells over time.',
-        'main_metric': 'Units sold by category per month.',
-        'metric_calc': 'SUM(units_in_order_item_row) grouped by month and item_category from fct_order_item.',
-        'how_to_use': 'Compare this with revenue and promo trends to separate true demand growth from discount-driven spikes.',
+        'what_it_says': 'Shows both units sold and weighted average unit selling price by category per month.',
+        'main_metric': 'Units sold and weighted avg unit selling price (EUR).',
+        'metric_calc': 'Units = SUM(units_in_order_item_row); weighted avg unit selling price = SUM(order_item_row_final_amount_gross_eur)/SUM(units_in_order_item_row), grouped by month and category.',
+        'how_to_use': 'Separate volume-driven growth from price/mix-driven growth by reading units and weighted price together.',
     },
     'task1-promo-uptake-by-month': {
         'what_it_says': 'Shows whether orders and units are becoming more promo-driven.',
@@ -840,5 +839,5 @@ print(f"Authenticated as: {user['email']}")
 print(f"Project UUID: {project_uuid}")
 print(f"Space UUID: {space_uuid}")
 print(f"Dashboard UUID: {dashboard_uuid}")
-print(f"Open dashboard: http://localhost:8080/projects/{project_uuid}/dashboards/{dashboard_uuid}")
+print(f"Open dashboard: http://localhost:18080/projects/{project_uuid}/dashboards/{dashboard_uuid}")
 PY

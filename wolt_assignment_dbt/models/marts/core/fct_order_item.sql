@@ -46,7 +46,7 @@ select
     item_category,
     brand_name,
     vat_rate_pct
-from {{ ref('int_wolt_order_items_promoted') }}
+from {{ ref('int_wolt_order_items_with_price_then_promo') }}
 {% if is_incremental() %}
 where time_order_received_utc >= (
     {{ incremental_cutoff_expr('fct_order_item', 'order_ts_utc') }}

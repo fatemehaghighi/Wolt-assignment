@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help setup-env validate-env upload-raw load-raw ingest-raw dbt-debug-dev dbt-debug-prod dbt-run-dev dbt-test-dev dbt-build-dev dbt-run-prod dbt-test-prod dbt-backfill-item-scd2-dev dbt-backfill-item-scd2-dev-full dbt-backfill-orders-dev dbt-corrective-publish-dev export-task1 export-task2 dagster-dev dagster-materialize-now dagster-install-daily dagster-uninstall-daily lightdash-up lightdash-down lightdash-connect lightdash-connect-semantic lightdash-task1 lightdash-task2 lightdash-dashboards build-presentation package-submission
+.PHONY: help setup-env validate-env upload-raw load-raw ingest-raw dbt-debug-dev dbt-debug-prod dbt-run-dev dbt-test-dev dbt-build-dev dbt-run-prod dbt-test-prod dbt-backfill-item-scd2-dev dbt-backfill-item-scd2-dev-full dbt-backfill-orders-dev dbt-corrective-publish-dev dbt-sync-lightdash-dev dbt-sync-lightdash-fast lightdash-sync-only export-task1 export-task2 dagster-dev dagster-materialize-now dagster-install-daily dagster-uninstall-daily lightdash-up lightdash-down lightdash-backup lightdash-doctor lightdash-maintain lightdash-connect lightdash-connect-semantic lightdash-verify-alignment lightdash-task1 lightdash-task2 lightdash-task2-q1 lightdash-task2-q1-mockup lightdash-task2-q1-deep-dive lightdash-dashboards build-presentation package-submission
 
 BACKFILL_DAYS ?= 35
 PUBLISH_TAG ?= corrective
@@ -23,6 +23,9 @@ help:
 	@echo "  dbt-backfill-item-scd2-dev-full  Full-refresh rebuild for item SCD2 chain on dev"
 	@echo "  dbt-backfill-orders-dev          Deep incremental backfill for purchase/order chain on dev"
 	@echo "  dbt-corrective-publish-dev       Corrective rebuild + reporting publish with run metadata"
+	@echo "  dbt-sync-lightdash-dev  Build dev marts + refresh Lightdash semantic project + verify parity"
+	@echo "  dbt-sync-lightdash-fast MODEL=<selector>  Build only selected dbt models, then refresh + verify"
+	@echo "  lightdash-sync-only  Refresh semantic project + verify parity (no dbt build)"
 	@echo "  export-task1    Export Task 1 datasets to outputs/task1_orders.csv and outputs/task1_order_items.csv"
 	@echo "  export-task2    Export Task 2 datasets (category, promo behavior, item affinity)"
 	@echo "  dagster-dev     Start Dagster UI with configured jobs/schedules"
@@ -31,10 +34,16 @@ help:
 	@echo "  dagster-uninstall-daily  Remove macOS LaunchAgent daily schedule"
 	@echo "  lightdash-up    Start local Lightdash (open-source BI) with Docker Compose"
 	@echo "  lightdash-down  Stop local Lightdash containers"
+	@echo "  lightdash-doctor  Check disk pressure, docker health, and lightdash health"
+	@echo "  lightdash-maintain  Safe cleanup for Docker pressure (backup + prune, no volumes)"
 	@echo "  lightdash-connect  Create/reuse Lightdash project connected to BigQuery dev tables"
 	@echo "  lightdash-connect-semantic  Create/reuse manifest-backed semantic Lightdash project"
+	@echo "  lightdash-verify-alignment  Verify dbt columns/meta.metrics vs Lightdash cached explores"
 	@echo "  lightdash-task1  Create/reuse Task 1 dashboard in Lightdash"
 	@echo "  lightdash-task2  Create/reuse Task 2 SQL charts and dashboard in Lightdash"
+	@echo "  lightdash-task2-q1  Create/reuse Task 2 Q1 deep-dive dashboard in Lightdash"
+	@echo "  lightdash-task2-q1-mockup  Create/reuse Task 2 Q1 mockup-style dashboard in Lightdash"
+	@echo "  lightdash-task2-q1-deep-dive  Create/reuse Task 2 Q1 business-analysis deep dive dashboard"
 	@echo "  lightdash-dashboards  Build both Task 1 and Task 2 Lightdash dashboards"
 	@echo "  build-presentation  Build presentation/wolt_assignment.pdf"
 	@echo "  package-submission  Build exports + presentation artifacts"
@@ -69,6 +78,24 @@ dbt-test-dev:
 dbt-build-dev:
 	@./scripts/dbt.sh build --target dev
 
+dbt-sync-lightdash-dev:
+	@./scripts/dbt.sh build --target dev --select marts.core marts.reporting
+	@./scripts/lightdash_backup.sh
+	@./scripts/lightdash_connect_semantic_project.sh
+	@python3 scripts/check_lightdash_alignment.py
+
+dbt-sync-lightdash-fast:
+	@if [ -z "$(MODEL)" ]; then echo "Usage: make dbt-sync-lightdash-fast MODEL=<dbt selector>"; exit 1; fi
+	@./scripts/dbt.sh build --target dev --select $(MODEL)
+	@./scripts/lightdash_backup.sh
+	@./scripts/lightdash_connect_semantic_project.sh
+	@python3 scripts/check_lightdash_alignment.py
+
+lightdash-sync-only:
+	@./scripts/lightdash_backup.sh
+	@./scripts/lightdash_connect_semantic_project.sh
+	@python3 scripts/check_lightdash_alignment.py
+
 dbt-run-prod:
 	@./scripts/dbt.sh run --target prod
 
@@ -82,7 +109,7 @@ dbt-backfill-item-scd2-dev-full:
 	@./scripts/dbt.sh run --target dev --full-refresh --select +int_wolt_item_scd2+ --vars '{"enable_dev_sampling": false, "enable_watermark_checks": true}'
 
 dbt-backfill-orders-dev:
-	@./scripts/dbt.sh run --target dev --select +int_wolt_purchase_logs_curated+ marts.core marts.reporting --vars '{"incremental_lookback_days": $(BACKFILL_DAYS), "enable_dev_sampling": false, "enable_watermark_checks": true}'
+	@./scripts/dbt.sh run --target dev --select +int_wolt_purchase_logs_curated_filtered+ marts.core marts.reporting --vars '{"incremental_lookback_days": $(BACKFILL_DAYS), "enable_dev_sampling": false, "enable_watermark_checks": true}'
 
 dbt-corrective-publish-dev:
 	@RUN_ID=$$(date -u +%Y%m%dT%H%M%SZ) && AS_OF_RUN_TS=$$(date -u +"%Y-%m-%d %H:%M:%S+00:00") && ./scripts/dbt.sh run --target dev --select +int_wolt_item_scd2+ marts.reporting --vars "{\"incremental_lookback_days\": $(BACKFILL_DAYS), \"enable_dev_sampling\": false, \"enable_watermark_checks\": true, \"publish_tag\": \"$(PUBLISH_TAG)\", \"run_id\": \"$$RUN_ID\", \"as_of_run_ts\": \"$$AS_OF_RUN_TS\"}"
@@ -108,6 +135,7 @@ dagster-uninstall-daily:
 lightdash-up:
 	@command -v docker >/dev/null 2>&1 || (echo "Docker CLI not found. Install Docker Desktop (or Colima+docker) and retry." && exit 127)
 	@docker info >/dev/null 2>&1 || (echo "Docker daemon is not running. Start Docker Desktop (or run: colima start)." && exit 1)
+	@./scripts/lightdash_doctor.sh
 	@cd bi/lightdash && test -f .env || cp .env.example .env
 	@cd bi/lightdash && docker compose up -d
 
@@ -115,17 +143,46 @@ lightdash-down:
 	@command -v docker >/dev/null 2>&1 || (echo "Docker CLI not found." && exit 127)
 	@cd bi/lightdash && docker compose down
 
+
+lightdash-backup:
+	@./scripts/lightdash_backup.sh
+
+lightdash-doctor:
+	@./scripts/lightdash_doctor.sh
+
+lightdash-maintain:
+	@./scripts/lightdash_doctor.sh --fix
+
 lightdash-connect:
+	@./scripts/lightdash_backup.sh
 	@./scripts/lightdash_connect_bigquery.sh
 
 lightdash-connect-semantic:
+	@./scripts/lightdash_backup.sh
 	@./scripts/lightdash_connect_semantic_project.sh
 
+lightdash-verify-alignment:
+	@python3 scripts/check_lightdash_alignment.py
+
 lightdash-task1:
+	@./scripts/lightdash_backup.sh
 	@./scripts/lightdash_create_task1_dashboard.sh
 
 lightdash-task2:
+	@./scripts/lightdash_backup.sh
 	@./scripts/lightdash_create_task2_dashboard.sh
+
+lightdash-task2-q1:
+	@./scripts/lightdash_backup.sh
+	@./scripts/lightdash_create_task2_q1_dashboard.sh
+
+lightdash-task2-q1-mockup:
+	@./scripts/lightdash_backup.sh
+	@./scripts/lightdash_create_task2_q1_mockup_dashboard.sh
+
+lightdash-task2-q1-deep-dive:
+	@./scripts/lightdash_backup.sh
+	@./scripts/lightdash_create_task2_q1_deep_dive_dashboard.sh
 
 lightdash-dashboards: lightdash-connect-semantic lightdash-task1 lightdash-task2
 

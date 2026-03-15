@@ -8,6 +8,6 @@ select
     purchase_key,
     item_key,
     time_order_received_utc
-from {{ ref('int_wolt_order_items_priced') }}
+from {{ ref('int_wolt_order_items_with_item_price') }}
 where item_key_sk is null
     or item_scd_sk is null
